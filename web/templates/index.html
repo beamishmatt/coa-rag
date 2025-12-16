@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investigative AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Toggle Sidebar Button -->
+    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar (collapsible) -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>Investigative AI</h2>
+            <button class="close-sidebar" onclick="toggleSidebar()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="document-management">
+            <h3><i class="fas fa-folder"></i> Documents</h3>
+            <div class="upload-area" id="uploadArea">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>Drop PDFs here or <span class="upload-link">browse</span></p>
+                <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.txt" hidden>
+            </div>
+            <div class="document-list" id="documentList"></div>
+        </div>
+
+        <div class="sidebar-footer">
+            <button class="new-chat-btn" onclick="startNewChat()">
+                <i class="fas fa-plus"></i> New Chat
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <div class="chat-container">
+            <!-- Messages Container - Scrollable -->
+            <div class="messages-container" id="messagesContainer">
+                <!-- Welcome Screen -->
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-header">
+                        <h1>What can I help investigate?</h1>
+                        <p>Upload documents and ask questions to uncover insights</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area - Fixed at Bottom -->
+            <div class="input-section">
+                <div class="input-container">
+                    <div class="input-wrapper">
+                        <textarea 
+                            id="messageInput" 
+                            placeholder="Ask a question about your documents..."
+                            rows="1"
+                            maxlength="4000"
+                        ></textarea>
+                        <button id="sendButton" onclick="sendMessage()" disabled>
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="input-footer">
+                    <small>Investigative AI can make mistakes. Verify important information.</small>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Upload Progress Modal (only for uploads, not chat) -->
+    <div class="modal" id="progressModal">
+        <div class="modal-content">
+            <div class="progress-info">
+                <h3 id="progressTitle">Uploading Documents</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <p id="progressStatus">Processing...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Backdrop -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
+

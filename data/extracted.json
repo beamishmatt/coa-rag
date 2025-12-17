@@ -105,15 +105,17 @@
       "type": "Location",
       "description": "City where the discussed events occurred.",
       "mentions": [
-        "Offense Location: | Chicopee",
         "I left Chicabee",
+        "You're from Chickabee or were from Chickabee at that time?",
+        "I sleep at Amanda's last night and left her house at about 8:30 this morning.",
         "I'm from Chicopee",
-        "You're from Chickabee or were from Chickabee at that time?"
+        "Offense Location: | Chicopee"
       ],
       "source": [
         "Roman-interview.pdf",
         "Roman-Interview-part2.pdf",
-        "Crime Scene Services - MSP (10-18-2011).pdf"
+        "Crime Scene Services - MSP (10-18-2011).pdf",
+        "Seth Green (8-26-2011)_Redacted.pdf"
       ]
     },
     {
@@ -367,6 +369,142 @@
         "It says it right there on Q35."
       ],
       "source": "booking.pdf"
+    },
+    {
+      "name": "Seth Jeremiah Green",
+      "type": "Person",
+      "description": "Witness and friend of Amanda Plasse.",
+      "mentions": [
+        "Statement of: Seth Jeremiah Green"
+      ],
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "name": "Amanda Plasse",
+      "type": "Person",
+      "description": "Deceased individual involved in the incident.",
+      "mentions": [
+        "concerning the above listed incident.",
+        "I met Amanda a week ago and we were so fucking happy."
+      ],
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "name": "Memorial Drive",
+      "type": "Location",
+      "description": "Street where Amanda worked at Friendly's.",
+      "mentions": [
+        "She has work at 5:00 at Friendly's on Memorial Drive."
+      ],
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "name": "Phil Beaulieu and Sons",
+      "type": "Organization",
+      "description": "Seth's workplace.",
+      "mentions": [
+        "I worked at Phil Beaulieu and Sons today."
+      ],
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "name": "Friendly's",
+      "type": "Organization",
+      "description": "Restaurant where Amanda worked.",
+      "mentions": [
+        "I went to Amanda's workplace at Friendly's."
+      ],
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "name": "Bank America",
+      "type": "Organization",
+      "description": "Bank where Amanda had an account.",
+      "mentions": [
+        "I know she has a bank account at Bank America."
+      ],
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "name": "Chad",
+      "type": "Person",
+      "description": "Seth's older brother.",
+      "mentions": [
+        "I talked to my older brother Chad who was upstairs in his room."
+      ],
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "name": "Shane Green",
+      "type": "Person",
+      "description": "Seth's acquaintance.",
+      "mentions": [
+        "I also talked to Shane Green, he was working on his car outside."
+      ],
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "name": "Rich",
+      "type": "Person",
+      "description": "Friend of Seth who visited Amanda's apartment.",
+      "mentions": [
+        "The only other people that have come to the apartment while I have been there were Rich."
+      ],
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "name": "Ryan Duffy",
+      "type": "Person",
+      "description": "Friend of Seth who visited Amanda's apartment.",
+      "mentions": [
+        "My friend Ryan Duffy came over to Amanda's three nights ago."
+      ],
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "name": "Mercedes",
+      "type": "Person",
+      "description": "Coworker of Amanda.",
+      "mentions": [
+        "Some girl named Mercedes that Amanda works with was over one day."
+      ],
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "name": "October 26, 2011",
+      "type": "Date",
+      "description": "Date of the statement.",
+      "mentions": [
+        "Date: 08/26/2011 8:05 P.M."
+      ],
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "name": "$250",
+      "type": "Money",
+      "description": "Amount of cash Amanda had in tips.",
+      "mentions": [
+        "Last night she had about two hundred and fifty dollars in cash from tips."
+      ],
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "name": "1986 Ford Mustang",
+      "type": "Other",
+      "description": "Seth's car.",
+      "mentions": [
+        "I have a 1986 Ford Mustang."
+      ],
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "name": "M Tech knife",
+      "type": "Other",
+      "description": "Knife Seth mentioned he might have left at Amanda's.",
+      "mentions": [
+        "I think I have my knife at her house. It is a M Tech knife."
+      ],
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
     }
   ],
   "claims": [
@@ -473,6 +611,34 @@
       ],
       "context": "Dennis presents an account of an incident related to Amanda Plosh's death.",
       "source": "booking.pdf"
+    },
+    {
+      "subject": "Seth Green",
+      "claim": "He was at Amanda's and found her dead.",
+      "quote": "When I opened the door the cat was there... I saw red blood but I thought it was paint.",
+      "context": "After calling 911, Seth described finding Amanda after he entered her apartment.",
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "subject": "Amanda Plasse",
+      "claim": "She had a lot of bad relationships in the past.",
+      "quote": "She said that she had a lot of bad relationships in the past, so she liked having sex with older guys.",
+      "context": "Seth recounting what Amanda told him about her past relationships.",
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "subject": "Seth and Amanda's relationship",
+      "claim": "They were happy together.",
+      "quote": "I met Amanda a week ago and we were so fucking happy.",
+      "context": "Seth talking about his relationship with Amanda.",
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "subject": "Rich and Ryan Duffy",
+      "claim": "Seth mentioned friends who interacted with Amanda.",
+      "quote": "The only other people that have come to the apartment while I have been there were Rich... My friend Ryan Duffy came over to Amanda's.",
+      "context": "Seth is discussing visitors to Amanda's apartment.",
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
     }
   ],
   "events": [
@@ -591,6 +757,35 @@
       ],
       "location": "unknown",
       "source": "booking.pdf"
+    },
+    {
+      "date": "08/26/2011",
+      "description": "Seth finds Amanda deceased in her apartment.",
+      "people_involved": [
+        "Seth Green"
+      ],
+      "location": "Amanda's apartment in Chicopee",
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "date": "unknown",
+      "description": "Seth called Amanda to tell her he was working late.",
+      "people_involved": [
+        "Seth Green",
+        "Amanda Plasse"
+      ],
+      "location": "unknown",
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "date": "unknown",
+      "description": "Seth and Amanda spent time together before her death.",
+      "people_involved": [
+        "Seth Green",
+        "Amanda Plasse"
+      ],
+      "location": "unknown",
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
     }
   ],
   "conflicts": [
@@ -664,11 +859,41 @@
     },
     {
       "claim_indices": [
+        1,
+        12
+      ],
+      "type": "contradiction",
+      "description": "Dennis claims to have seen the suspect multiple times (suggesting he is an eyewitness) while also claiming he is the wrongfully accused murderer, creating a contradiction in his statements about involvement.",
+      "claims": [
+        {
+          "subject": "Dennis",
+          "claim": "Claims he delivered marijuana to Amanda on the day of her murder.",
+          "quote": "The day of manager's kill, I went and bought her some weed.",
+          "context": "Dennis recounts delivering weed to Amanda on the morning of her death.",
+          "source": "Roman-interview.pdf"
+        },
+        {
+          "subject": "Dennis Rosa Roman",
+          "claim": "He feels suicidal in his current situation.",
+          "quote": [
+            "Yeah, I am suicidal actually. I am."
+          ],
+          "context": "Dennis admits to feeling suicidal during the interaction with law enforcement.",
+          "source": "booking.pdf"
+        }
+      ],
+      "sources": [
+        "booking.pdf",
+        "Roman-interview.pdf"
+      ]
+    },
+    {
+      "claim_indices": [
         2,
         5
       ],
-      "type": "discrepancy",
-      "description": "Dennis claims he delivered marijuana to Amanda on the same day she was murdered, while Amanda was killed shortly after a drug deal, which may suggest timing conflicts or miscommunication about events.",
+      "type": "inconsistency",
+      "description": "Dennis claims he delivered marijuana on the day of the murder, while Amanda's statement suggests she was killed shortly after a drug deal, raising questions about timing and his presence.",
       "claims": [
         {
           "subject": "Dennis",
@@ -692,63 +917,30 @@
     },
     {
       "claim_indices": [
-        12,
-        2
-      ],
-      "type": "contradiction",
-      "description": "Dennis claims he is wrongfully accused of murder while also stating he was involved in delivering marijuana to Amanda the day she was killed, raising questions about his involvement.",
-      "claims": [
-        {
-          "subject": "Dennis Rosa Roman",
-          "claim": "He feels suicidal in his current situation.",
-          "quote": [
-            "Yeah, I am suicidal actually. I am."
-          ],
-          "context": "Dennis admits to feeling suicidal during the interaction with law enforcement.",
-          "source": "booking.pdf"
-        },
-        {
-          "subject": "Dennis",
-          "claim": "Claims he overheard a conversation implying a drug deal went wrong.",
-          "quote": "I heard something about money and drugs.",
-          "context": "Dennis describes hearing an argument regarding money while at Amanda's.",
-          "source": "Roman-interview.pdf"
-        }
-      ],
-      "sources": [
-        "booking.pdf",
-        "Roman-interview.pdf"
-      ]
-    },
-    {
-      "claim_indices": [
-        12,
-        13
+        1,
+        15
       ],
       "type": "discrepancy",
-      "description": "Dennis asserts he is not the murderer, yet expresses feeling suicidal, which may reflect a psychological state inconsistent with his claim of innocence.",
+      "description": "Dennis mentions having seen the suspect multiple times, whereas Seth claims to have found Amanda dead; there is a discrepancy as to who could have been at the scene if Dennis uses the knowledge of suspect locations.",
       "claims": [
         {
-          "subject": "Dennis Rosa Roman",
-          "claim": "He feels suicidal in his current situation.",
-          "quote": [
-            "Yeah, I am suicidal actually. I am."
-          ],
-          "context": "Dennis admits to feeling suicidal during the interaction with law enforcement.",
-          "source": "booking.pdf"
+          "subject": "Dennis",
+          "claim": "Claims he delivered marijuana to Amanda on the day of her murder.",
+          "quote": "The day of manager's kill, I went and bought her some weed.",
+          "context": "Dennis recounts delivering weed to Amanda on the morning of her death.",
+          "source": "Roman-interview.pdf"
         },
         {
-          "subject": "Dennis Rosa Roman",
-          "claim": "He was involved in an altercation where he tried to save someone.",
-          "quote": [
-            "I tried to save her."
-          ],
-          "context": "Dennis presents an account of an incident related to Amanda Plosh's death.",
-          "source": "booking.pdf"
+          "subject": "Amanda Plasse",
+          "claim": "She had a lot of bad relationships in the past.",
+          "quote": "She said that she had a lot of bad relationships in the past, so she liked having sex with older guys.",
+          "context": "Seth recounting what Amanda told him about her past relationships.",
+          "source": "Seth Green (8-26-2011)_Redacted.pdf"
         }
       ],
       "sources": [
-        "booking.pdf"
+        "Seth Green (8-26-2011)_Redacted.pdf",
+        "Roman-interview.pdf"
       ]
     }
   ],
@@ -756,7 +948,8 @@
     "Roman-interview.pdf",
     "Roman-Interview-part2.pdf",
     "Crime Scene Services - MSP (10-18-2011).pdf",
-    "booking.pdf"
+    "booking.pdf",
+    "Seth Green (8-26-2011)_Redacted.pdf"
   ],
   "key_facts": [
     {
@@ -830,6 +1023,22 @@
     {
       "fact": "He mentions a baby thermometer worth 15 bucks.",
       "source": "booking.pdf"
+    },
+    {
+      "fact": "Seth Green stated he knew Amanda Plasse for one week.",
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "fact": "Amanda worked at Friendly's and had no car.",
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "fact": "Amanda had $250 in cash from tips and a bank account at Bank America.",
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "fact": "Seth found Amanda with her throat slit and called 911.",
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
     }
   ]
 }

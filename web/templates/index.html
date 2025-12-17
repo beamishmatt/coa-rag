@@ -16,6 +16,11 @@
         <i class="fas fa-bars"></i>
     </button>
 
+    <!-- README Toggle Button -->
+    <button class="readme-toggle" id="readmeToggle" onclick="toggleReadme()">
+        <i class="fas fa-book"></i>
+    </button>
+
     <!-- Sidebar (collapsible) -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -93,6 +98,189 @@
 
     <!-- Sidebar Backdrop -->
     <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
+    <!-- README Drawer -->
+    <aside class="readme-drawer" id="readmeDrawer">
+        <div class="readme-header">
+            <h2><i class="fas fa-book"></i> Technical Documentation</h2>
+            <button class="close-readme" onclick="toggleReadme()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="readme-content">
+            <section class="readme-section">
+                <h3>Overview</h3>
+                <p>This is an <strong>Investigative AI System</strong> that uses a <em>Chain-of-Agents (CoA)</em> architecture to analyze documents and generate comprehensive investigative reports.</p>
+            </section>
+
+            <section class="readme-section">
+                <h3>How It Works</h3>
+                <div class="workflow-diagram">
+                    <div class="workflow-step">
+                        <div class="step-icon"><i class="fas fa-file-pdf"></i></div>
+                        <div class="step-content">
+                            <strong>1. Document Ingestion</strong>
+                            <p>PDFs are uploaded, chunked, and embedded into OpenAI's Vector Store. Scanned PDFs are automatically OCR'd using Tesseract.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-arrow"><i class="fas fa-chevron-down"></i></div>
+                    <div class="workflow-step">
+                        <div class="step-icon"><i class="fas fa-project-diagram"></i></div>
+                        <div class="step-content">
+                            <strong>2. Knowledge Graph Extraction</strong>
+                            <p>LLM extracts structured data: entities (people, orgs, locations), claims, events, and key facts. Cross-document conflicts are detected automatically.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-arrow"><i class="fas fa-chevron-down"></i></div>
+                    <div class="workflow-step">
+                        <div class="step-icon"><i class="fas fa-expand-arrows-alt"></i></div>
+                        <div class="step-content">
+                            <strong>3. Query Expansion (LLM)</strong>
+                            <p>The LLM analyzes the question and generates N diverse search queries to maximize semantic coverage across different vocabulary and angles.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-arrow"><i class="fas fa-chevron-down"></i></div>
+                    <div class="workflow-step">
+                        <div class="step-icon"><i class="fas fa-users-cog"></i></div>
+                        <div class="step-content">
+                            <strong>4. Worker Agents (x4)</strong>
+                            <p>Four parallel agents search documents with different query variants, extracting structured evidence.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-arrow"><i class="fas fa-chevron-down"></i></div>
+                    <div class="workflow-step">
+                        <div class="step-icon"><i class="fas fa-brain"></i></div>
+                        <div class="step-content">
+                            <strong>5. Manager Agent</strong>
+                            <p>Synthesizes all worker findings into a coherent response with citations and conflict detection.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-arrow"><i class="fas fa-chevron-down"></i></div>
+                    <div class="workflow-step">
+                        <div class="step-icon"><i class="fas fa-stream"></i></div>
+                        <div class="step-content">
+                            <strong>6. Streaming Response</strong>
+                            <p>Final report streams to you in real-time via WebSocket connection.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="readme-section">
+                <h3>Knowledge Graph Schema</h3>
+                <p>At upload time, each document is preprocessed to extract:</p>
+                <pre><code>{
+  "entities": [
+    {"name": "...", "type": "Person|Org|Location|Date|Money", "description": "...", "mentions": [...]}
+  ],
+  "claims": [
+    {"subject": "...", "claim": "...", "quote": "exact text", "source": "doc.pdf"}
+  ],
+  "events": [
+    {"date": "...", "description": "...", "people_involved": [...], "location": "..."}
+  ],
+  "conflicts": [
+    {"subject": "...", "claims": [...], "sources": [...]}
+  ]
+}</code></pre>
+            </section>
+
+            <section class="readme-section">
+                <h3>Chain-of-Agents Architecture</h3>
+                <div class="architecture-box">
+                    <div class="arch-layer">
+                        <span class="arch-label">User Layer</span>
+                        <div class="arch-items">
+                            <span class="arch-item">Question Input</span>
+                            <span class="arch-item">Conversation History</span>
+                        </div>
+                    </div>
+                    <div class="arch-connector">|</div>
+                    <div class="arch-layer">
+                        <span class="arch-label">Worker Layer</span>
+                        <div class="arch-items workers">
+                            <span class="arch-item">Worker 1</span>
+                            <span class="arch-item">Worker 2</span>
+                            <span class="arch-item">Worker 3</span>
+                            <span class="arch-item">Worker 4</span>
+                        </div>
+                        <p class="arch-note">Parallel execution with file_search</p>
+                    </div>
+                    <div class="arch-connector">|</div>
+                    <div class="arch-layer">
+                        <span class="arch-label">Manager Layer</span>
+                        <div class="arch-items">
+                            <span class="arch-item manager">Manager Agent</span>
+                        </div>
+                        <p class="arch-note">Synthesis + Streaming Output</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="readme-section">
+                <h3>Worker Output Schema</h3>
+                <p>Each worker returns structured JSON:</p>
+                <pre><code>{
+  "relevant_findings": [
+    {
+      "finding": "specific fact or quote",
+      "relevance": "why this matters",
+      "source": "document reference"
+    }
+  ],
+  "direct_answers": [...],
+  "related_context": [...],
+  "unanswered_aspects": [...]
+}</code></pre>
+            </section>
+
+            <section class="readme-section">
+                <h3>Key Features</h3>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i> <strong>Knowledge Graph:</strong> Entities, claims, and events extracted at upload time</li>
+                    <li><i class="fas fa-check"></i> <strong>OCR Support:</strong> Scanned PDFs automatically processed with Tesseract OCR</li>
+                    <li><i class="fas fa-check"></i> <strong>Query Expansion:</strong> Complex questions decomposed into multiple search angles</li>
+                    <li><i class="fas fa-check"></i> <strong>Parallel Processing:</strong> 4 workers analyze documents simultaneously</li>
+                    <li><i class="fas fa-check"></i> <strong>Source Attribution:</strong> Every finding traced to its source document</li>
+                    <li><i class="fas fa-check"></i> <strong>Conflict Detection:</strong> Contradictions between documents highlighted</li>
+                    <li><i class="fas fa-check"></i> <strong>Gap Analysis:</strong> Identifies what information is missing</li>
+                    <li><i class="fas fa-check"></i> <strong>Real-time Streaming:</strong> Responses stream token-by-token</li>
+                    <li><i class="fas fa-check"></i> <strong>Multi-turn Context:</strong> Conversation history maintained across questions</li>
+                </ul>
+            </section>
+
+            <section class="readme-section">
+                <h3>Technology Stack</h3>
+                <div class="tech-stack">
+                    <div class="tech-item">
+                        <span class="tech-name">OpenAI GPT-4o-mini</span>
+                        <span class="tech-desc">LLM backbone</span>
+                    </div>
+                    <div class="tech-item">
+                        <span class="tech-name">OpenAI Vector Store</span>
+                        <span class="tech-desc">Semantic search & embeddings</span>
+                    </div>
+                    <div class="tech-item">
+                        <span class="tech-name">Tesseract OCR</span>
+                        <span class="tech-desc">Scanned PDF text extraction</span>
+                    </div>
+                    <div class="tech-item">
+                        <span class="tech-name">FastAPI</span>
+                        <span class="tech-desc">Web framework & WebSockets</span>
+                    </div>
+                    <div class="tech-item">
+                        <span class="tech-name">file_search</span>
+                        <span class="tech-desc">Document retrieval tool</span>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </aside>
+
+    <!-- README Backdrop -->
+    <div class="readme-backdrop" id="readmeBackdrop" onclick="toggleReadme()"></div>
 
     <script src="/static/app.js"></script>
 </body>

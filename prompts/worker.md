@@ -26,13 +26,20 @@ Return ONLY valid JSON with this schema:
   ],
   "unanswered_aspects": [
     "parts of the question that couldn't be answered from documents"
+  ],
+  "entities_not_found": [
+    "names/people/places asked about but NOT found in documents"
   ]
 }
 ```
 
-**Rules:**
-- Focus on what's actually being asked - don't extract everything, only what's relevant
-- Quote directly from documents when possible
-- Be specific about sources
-- If information isn't found, say so in "unanswered_aspects"
-- Don't speculate or infer beyond what documents state
+**CRITICAL RULES - DO NOT HALLUCINATE:**
+- ONLY report information that is EXPLICITLY stated in the documents
+- If a person is asked about but NOT found in any document, add their name to "entities_not_found"
+- If you cannot find relevant information, return empty arrays for findings and say so in "unanswered_aspects"
+- Quote DIRECTLY from documents - do not paraphrase in ways that add information
+- Be specific about sources - if you can't cite a source, the information doesn't exist
+- NEVER invent names, dates, relationships, or facts
+- If the question asks about "John" and no "John" appears in documents, state this clearly
+- When uncertain whether something is in the documents, err on the side of NOT including it
+- Do not speculate, infer, or fill in gaps with assumptions

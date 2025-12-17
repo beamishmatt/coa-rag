@@ -220,46 +220,78 @@ class InvestigativeAI {
         return messageDiv;
     }
 
-    showLoadingIndicator() {
+    showLoadingIndicator(mode = 'vector') {
         // Remove any existing loading indicator
         this.removeLoadingIndicator();
 
         const loadingDiv = document.createElement('div');
         loadingDiv.className = 'typing-indicator';
         loadingDiv.id = 'loadingIndicator';
+        loadingDiv.dataset.mode = mode;
 
-        loadingDiv.innerHTML = `
-            <div class="progress-steps" id="progressSteps">
-                <div class="progress-step active" data-step="workers">
-                    <i class="fas fa-spinner"></i>
-                    <span>Analyzing documents...</span>
+        if (mode === 'graph') {
+            // Simpler loading for graph/knowledge base queries
+            loadingDiv.innerHTML = `
+                <div class="progress-steps" id="progressSteps">
+                    <div class="progress-step active" data-step="graph">
+                        <i class="fas fa-spinner"></i>
+                        <span>Querying knowledge graph...</span>
+                    </div>
+                    <div class="progress-step pending" data-step="streaming">
+                        <i class="fas fa-circle"></i>
+                        <span>Generating response</span>
+                    </div>
                 </div>
-                <div class="progress-step pending" data-step="synthesizing">
-                    <i class="fas fa-circle"></i>
-                    <span>Synthesizing findings</span>
+            `;
+        } else {
+            // Full loading for vector/CoA queries
+            loadingDiv.innerHTML = `
+                <div class="progress-steps" id="progressSteps">
+                    <div class="progress-step active" data-step="workers">
+                        <i class="fas fa-spinner"></i>
+                        <span>Analyzing documents...</span>
+                    </div>
+                    <div class="progress-step pending" data-step="synthesizing">
+                        <i class="fas fa-circle"></i>
+                        <span>Synthesizing findings</span>
+                    </div>
+                    <div class="progress-step pending" data-step="streaming">
+                        <i class="fas fa-circle"></i>
+                        <span>Generating response</span>
+                    </div>
                 </div>
-                <div class="progress-step pending" data-step="streaming">
-                    <i class="fas fa-circle"></i>
-                    <span>Generating response</span>
-                </div>
-            </div>
-        `;
+            `;
+        }
 
         this.elements.messagesContainer.appendChild(loadingDiv);
         this.scrollToBottom();
     }
 
     updateLoadingState(stage, message) {
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const mode = loadingIndicator?.dataset.mode || 'vector';
+        
+        // Handle graph mode - switch to graph loading if receiving graph stage
+        if (stage === 'graph' && mode !== 'graph') {
+            this.showLoadingIndicator('graph');
+            return;
+        }
+        
         const steps = document.querySelectorAll('.progress-step');
         
         steps.forEach(step => {
             const stepStage = step.dataset.step;
             const icon = step.querySelector('i');
+            const span = step.querySelector('span');
             
             if (stepStage === stage) {
                 step.className = 'progress-step active';
                 icon.className = 'fas fa-spinner';
-            } else if (this.getStageOrder(stepStage) < this.getStageOrder(stage)) {
+                // Update message if provided
+                if (message && span) {
+                    span.textContent = message;
+                }
+            } else if (this.getStageOrder(stepStage, mode) < this.getStageOrder(stage, mode)) {
                 step.className = 'progress-step completed';
                 icon.className = 'fas fa-check';
             } else {
@@ -269,7 +301,11 @@ class InvestigativeAI {
         });
     }
 
-    getStageOrder(stage) {
+    getStageOrder(stage, mode = 'vector') {
+        if (mode === 'graph') {
+            const order = { 'graph': 0, 'streaming': 1 };
+            return order[stage] ?? -1;
+        }
         const order = { 'workers': 0, 'synthesizing': 1, 'streaming': 2 };
         return order[stage] ?? -1;
     }
@@ -384,7 +420,12 @@ class InvestigativeAI {
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i];
             
-            // Headers
+            // Headers (check longer prefixes first)
+            if (line.match(/^#### /)) {
+                if (inList) { processedLines.push(listType === 'ul' ? '</ul>' : '</ol>'); inList = false; }
+                processedLines.push(`<h4>${line.slice(5)}</h4>`);
+                continue;
+            }
             if (line.match(/^### /)) {
                 if (inList) { processedLines.push(listType === 'ul' ? '</ul>' : '</ol>'); inList = false; }
                 processedLines.push(`<h3>${line.slice(4)}</h3>`);
@@ -471,11 +512,15 @@ class InvestigativeAI {
         // Clean up empty paragraphs and extra breaks
         html = html
             .replace(/<p><\/p>/g, '')
+            .replace(/<br><br><br>/g, '<br>')
             .replace(/<br><br>/g, '<br>')
             .replace(/<\/h(\d)><br>/g, '</h$1>')
             .replace(/<\/ul><br>/g, '</ul>')
             .replace(/<\/ol><br>/g, '</ol>')
-            .replace(/<\/blockquote><br>/g, '</blockquote>');
+            .replace(/<\/blockquote><br>/g, '</blockquote>')
+            .replace(/<hr><br>/g, '<hr>')
+            .replace(/<br><h/g, '<h')
+            .replace(/<br><hr/g, '<hr');
         
         return html;
     }
@@ -668,6 +713,24 @@ function toggleSidebar() {
         }, 150);
     } else {
         sidebar.classList.add('open');
+        backdrop.classList.add('show');
+        toggleBtn.classList.add('hidden');
+    }
+}
+
+function toggleReadme() {
+    const readmeDrawer = document.getElementById('readmeDrawer');
+    const backdrop = document.getElementById('readmeBackdrop');
+    const toggleBtn = document.getElementById('readmeToggle');
+    
+    if (readmeDrawer.classList.contains('open')) {
+        readmeDrawer.classList.remove('open');
+        backdrop.classList.remove('show');
+        setTimeout(() => {
+            toggleBtn.classList.remove('hidden');
+        }, 150);
+    } else {
+        readmeDrawer.classList.add('open');
         backdrop.classList.add('show');
         toggleBtn.classList.add('hidden');
     }

@@ -5,3 +5,6 @@ uvicorn
 websockets
 jinja2
 python-multipart
+pymupdf
+pytesseract
+pdf2image

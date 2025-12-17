@@ -19,6 +19,7 @@ A comprehensive investigative AI system that ingests documents into OpenAI Vecto
 
 ### 📚 **Document Processing**
 - **Smart Ingestion**: Automatic PDF chunking and embedding via OpenAI
+- **OCR Support**: Automatic text extraction from scanned PDFs using Tesseract
 - **Vector Search**: Semantic + keyword search capabilities  
 - **Bulk Upload**: Process multiple documents simultaneously
 - **Status Tracking**: Real-time indexing progress monitoring
@@ -32,10 +33,25 @@ A comprehensive investigative AI system that ingests documents into OpenAI Vecto
 ### Prerequisites
 - Python 3.10+ 
 - OpenAI API key
+- Tesseract OCR (for scanned PDFs)
+- Poppler (for PDF rendering)
 
 ### Installation
 
-1. **Clone and setup the environment:**
+1. **Install system dependencies (for OCR support):**
+```bash
+# macOS
+brew install tesseract poppler
+
+# Ubuntu/Debian
+sudo apt-get install tesseract-ocr poppler-utils
+
+# Windows - Download from:
+# Tesseract: https://github.com/UB-Mannheim/tesseract/wiki
+# Poppler: https://github.com/oschwartz10612/poppler-windows/releases
+```
+
+2. **Clone and setup the environment:**
 ```bash
 # Create virtual environment
 python -m venv .venv
@@ -45,7 +61,7 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-2. **Configure OpenAI API:**
+3. **Configure OpenAI API:**
 ```bash
 # Copy the environment template
 cp env-template.txt .env
@@ -54,12 +70,12 @@ cp env-template.txt .env
 OPENAI_API_KEY=your_key_here
 ```
 
-3. **Start the web interface:**
+4. **Start the web interface:**
 ```bash
 python -m uvicorn web.app:app --reload
 ```
 
-4. **Open in browser:**
+5. **Open in browser:**
 Navigate to `http://localhost:8000`
 
 ## Usage
@@ -165,10 +181,14 @@ investigative-ai-proto/
 - `GET /` - Web interface
 - `GET /api/status` - System and vector store status
 - `POST /api/create-vector-store` - Initialize vector store
-- `POST /api/upload` - Upload documents (multipart/form-data)
+- `POST /api/upload` - Upload documents (multipart/form-data, auto-OCR for scanned PDFs)
 - `GET /api/documents` - List uploaded documents  
 - `DELETE /api/documents/{id}` - Remove document
 - `POST /api/ask` - Ask question (JSON: `{"question": "..."}`)
+- `POST /api/reextract/{filename}` - Re-extract document with OCR
+- `GET /api/extraction` - Get extraction status and summary
+- `GET /api/extraction/entities` - Get all extracted entities
+- `GET /api/extraction/conflicts` - Get detected conflicts
 
 ### WebSocket Events
 
@@ -290,6 +310,16 @@ python scripts/02_ask.py "Summarize the key points"
 **Import errors when running scripts**
 - Ensure you're in the project root directory
 - Verify virtual environment is activated
+
+**Scanned PDF not being indexed/searchable**
+- Check console for "No text found... attempting OCR" message
+- Verify Tesseract is installed: `tesseract --version`
+- Verify Poppler is installed: `pdftoppm -v`
+- On macOS: `brew install tesseract poppler`
+
+**OCR extraction is slow**
+- OCR can take 5-30 seconds per page depending on quality
+- Progress is logged to console during upload
 
 ### Debug Mode
 

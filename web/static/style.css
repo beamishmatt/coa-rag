@@ -65,6 +65,39 @@ body {
     transform: translateX(-10px);
 }
 
+/* README Toggle Button */
+.readme-toggle {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1001;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.readme-toggle:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--border-light);
+    color: var(--text-primary);
+}
+
+.readme-toggle.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(10px);
+}
+
 /* Sidebar */
 .sidebar {
     position: fixed;
@@ -437,9 +470,18 @@ body {
     line-height: 1.4;
 }
 
+.message-content h4 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 16px 0 8px 0;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
 .message-content h1:first-child,
 .message-content h2:first-child,
-.message-content h3:first-child {
+.message-content h3:first-child,
+.message-content h4:first-child {
     margin-top: 0;
 }
 
@@ -693,6 +735,381 @@ body {
 .sidebar-backdrop.show {
     opacity: 1;
     visibility: visible;
+}
+
+/* README Drawer */
+.readme-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 420px;
+    height: 100vh;
+    background: var(--bg-secondary);
+    border-left: 1px solid var(--border);
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.readme-drawer.open {
+    transform: translateX(0);
+}
+
+.readme-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, #1e1e24 100%);
+}
+
+.readme-header h2 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.readme-header h2 i {
+    color: var(--text-secondary);
+}
+
+.close-readme {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-readme:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.readme-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+}
+
+.readme-section {
+    margin-bottom: 28px;
+}
+
+.readme-section h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+}
+
+.readme-section p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+.readme-section strong {
+    color: var(--text-primary);
+}
+
+.readme-section em {
+    color: var(--text-primary);
+    font-style: italic;
+}
+
+/* Workflow Diagram */
+.workflow-diagram {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.workflow-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+}
+
+.step-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.step-icon i {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.step-content {
+    flex: 1;
+}
+
+.step-content strong {
+    display: block;
+    font-size: 13px;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.step-content p {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.workflow-arrow {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 10px;
+    padding: 2px 0;
+}
+
+/* Architecture Box */
+.architecture-box {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+}
+
+.arch-layer {
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    margin-bottom: 4px;
+}
+
+.arch-label {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.arch-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.arch-items.workers {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.arch-item {
+    padding: 6px 10px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.arch-item.manager {
+    background: var(--bg-tertiary);
+    border-color: var(--border-light);
+    color: var(--text-primary);
+}
+
+.arch-note {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin: 8px 0 0;
+    text-align: center;
+    font-style: italic;
+}
+
+.arch-connector {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 4px 0;
+}
+
+/* Code Block in README */
+.readme-section pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    overflow-x: auto;
+    margin: 8px 0;
+}
+
+.readme-section pre code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* Feature List */
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.feature-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    line-height: 1.5;
+}
+
+.feature-list li:last-child {
+    border-bottom: none;
+}
+
+.feature-list li i {
+    color: var(--success);
+    font-size: 10px;
+    margin-top: 3px;
+    flex-shrink: 0;
+}
+
+.feature-list li strong {
+    color: var(--text-primary);
+}
+
+/* Tech Stack */
+.tech-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tech-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.tech-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.tech-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Tips List */
+.tips-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.tips-list li {
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    line-height: 1.5;
+}
+
+.tips-list li:last-child {
+    border-bottom: none;
+}
+
+.tips-list li strong {
+    color: var(--text-primary);
+}
+
+/* Example Questions */
+.example-questions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.example-q {
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 10px 12px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    border-left: 3px solid var(--border-light);
+    font-style: italic;
+}
+
+/* README Backdrop */
+.readme-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(4px);
+}
+
+.readme-backdrop.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* README Drawer Responsive */
+@media (max-width: 768px) {
+    .readme-drawer {
+        width: 100%;
+    }
+    
+    .arch-items.workers {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 /* Modal - for uploads only */

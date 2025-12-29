@@ -290,43 +290,7 @@ python scripts/01_upload_docs.py
 python scripts/02_ask.py "Summarize the key points"
 ```
 
-## Troubleshooting
 
-### Common Issues
-
-**"No vector store found"**
-- Solution: Upload documents first, which auto-creates the vector store
-
-**WebSocket connection failed** 
-- Check if the server is running on the correct port
-- Verify firewall settings for local development
-
-**Document upload stuck "Processing"**
-- Wait for OpenAI indexing to complete (can take several minutes)
-- Check API key permissions and rate limits
-
-**Import errors when running scripts**
-- Ensure you're in the project root directory
-- Verify virtual environment is activated
-
-**Scanned PDF not being indexed/searchable**
-- Check console for "No text found... attempting OCR" message
-- Verify Tesseract is installed: `tesseract --version`
-- Verify Poppler is installed: `pdftoppm -v`
-- On macOS: `brew install tesseract poppler`
-
-**OCR extraction is slow**
-- OCR can take 5-30 seconds per page depending on quality
-- Progress is logged to console during upload
-
-### Debug Mode
-
-Enable detailed logging:
-```bash
-export PYTHONPATH=.
-python -c "import logging; logging.basicConfig(level=logging.DEBUG)"
-uvicorn web.app:app --log-level debug
-```
 
 ## License
 

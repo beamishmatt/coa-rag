@@ -80,3 +80,6 @@ class InvestigationWebSocketManager:
             "timestamp": asyncio.get_event_loop().time()
         }, websocket)
 
+
+
+

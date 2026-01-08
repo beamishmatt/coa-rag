@@ -27,8 +27,11 @@ def _empty_extraction() -> dict:
         "entities": [],
         "claims": [],
         "events": [],
+        "relationships": [],
+        "investigative_notes": [],
         "conflicts": [],
-        "documents": []
+        "documents": [],
+        "key_facts": []
     }
 
 
@@ -57,17 +60,33 @@ Return ONLY valid JSON with this exact structure:
     "events": [
         {"date": "date if mentioned or 'unknown'", "description": "what happened", "people_involved": ["names"], "location": "where if mentioned"}
     ],
+    "relationships": [
+        {"person1": "name of first person", "person2": "name of second person", "type": "relationship type", "description": "context about the relationship", "quote": "supporting quote from document"}
+    ],
     "key_facts": [
         "important factual statements from the document"
     ]
 }
+
+RELATIONSHIP TYPES to look for:
+- Family: parent, child, sibling, spouse, ex-spouse, relative
+- Romantic: boyfriend, girlfriend, ex-boyfriend, ex-girlfriend
+- Professional: coworker, employer, employee, business_partner
+- Social: friend, acquaintance, neighbor, roommate
+- Case-related: interviewed, mentioned_in_case, referenced, present_at_scene
+- Transactional: buyer, seller, dealer, customer
+- General: knows, associated_with
 
 Rules:
 - Extract ALL people, organizations, locations, dates, and monetary amounts mentioned
 - Include exact quotes where possible
 - For claims, focus on assertions, statements, and testimony
 - For events, capture anything with a temporal or sequential nature
+- For relationships, extract ANY connection between people mentioned - even indirect ones
 - Be thorough - this extraction will be used to answer comprehensive queries later
+- NEVER label anyone as "suspect" - use neutral terms like "person mentioned" or "interviewed individual"
+- DO NOT assign investigative roles (suspect, person of interest) - only extract what the document explicitly states
+- If a document explicitly labels someone (e.g., "Suspect: John Doe"), extract that as a QUOTE, not as your own classification
 
 DOCUMENT:
 """
@@ -105,6 +124,8 @@ DOCUMENT:
         for item in extracted.get("claims", []):
             item["source"] = doc_name
         for item in extracted.get("events", []):
+            item["source"] = doc_name
+        for item in extracted.get("relationships", []):
             item["source"] = doc_name
         for i, fact in enumerate(extracted.get("key_facts", [])):
             if isinstance(fact, str):
@@ -177,10 +198,54 @@ def merge_extraction(all_data: dict, new_extraction: dict, doc_name: str) -> dic
     # Merge events
     all_data.setdefault("events", []).extend(new_extraction.get("events", []))
     
+    # Merge relationships with deduplication
+    all_data.setdefault("relationships", [])
+    all_data["relationships"] = _merge_relationships(
+        all_data["relationships"], 
+        new_extraction.get("relationships", [])
+    )
+    
     # Merge key facts
     all_data.setdefault("key_facts", []).extend(new_extraction.get("key_facts", []))
     
     return all_data
+
+
+def _merge_relationships(existing: list, new_relationships: list) -> list:
+    """Merge relationships, avoiding duplicates."""
+    
+    def relationship_key(r):
+        """Create a normalized key for relationship comparison."""
+        names = sorted([
+            _normalize_name(r.get("person1", "")), 
+            _normalize_name(r.get("person2", ""))
+        ])
+        return (names[0], names[1], r.get("type", "").lower())
+    
+    existing_keys = {relationship_key(r) for r in existing}
+    
+    for rel in new_relationships:
+        key = relationship_key(rel)
+        
+        if key not in existing_keys:
+            existing.append(rel)
+            existing_keys.add(key)
+        else:
+            # Find existing and merge sources if different
+            for existing_rel in existing:
+                if relationship_key(existing_rel) == key:
+                    # Merge sources
+                    existing_source = existing_rel.get("source", "")
+                    new_source = rel.get("source", "")
+                    if new_source and new_source != existing_source:
+                        if isinstance(existing_source, list):
+                            if new_source not in existing_source:
+                                existing_source.append(new_source)
+                        else:
+                            existing_rel["source"] = [existing_source, new_source] if existing_source else new_source
+                    break
+    
+    return existing
 
 
 def _normalize_name(name: str) -> str:
@@ -190,6 +255,57 @@ def _normalize_name(name: str) -> str:
     # Lowercase, strip whitespace
     normalized = name.lower().strip()
     return normalized
+
+
+def _levenshtein_distance(s1: str, s2: str) -> int:
+    """Calculate Levenshtein (edit) distance between two strings."""
+    if len(s1) < len(s2):
+        return _levenshtein_distance(s2, s1)
+    
+    if len(s2) == 0:
+        return len(s1)
+    
+    previous_row = range(len(s2) + 1)
+    for i, c1 in enumerate(s1):
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = previous_row[j + 1] + 1
+            deletions = current_row[j] + 1
+            substitutions = previous_row[j] + (c1 != c2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+    
+    return previous_row[-1]
+
+
+def _names_similar(word1: str, word2: str) -> bool:
+    """
+    Check if two name parts are similar enough to be the same name.
+    Handles OCR errors and spelling variations.
+    """
+    if not word1 or not word2:
+        return False
+    if word1 == word2:
+        return True
+    
+    # Must start with same letter (most name variations preserve first letter)
+    if word1[0] != word2[0]:
+        return False
+    
+    # Calculate edit distance
+    distance = _levenshtein_distance(word1, word2)
+    max_len = max(len(word1), len(word2))
+    
+    # Allow more edits for longer words
+    # For short words (<=5 chars): allow 1-2 edits
+    # For medium words (6-8 chars): allow 2-3 edits
+    # For longer words: allow ~30% difference
+    if max_len <= 5:
+        return distance <= 2
+    elif max_len <= 8:
+        return distance <= 3
+    else:
+        return distance / max_len <= 0.3
 
 
 def _names_match(name1: str, name2: str) -> bool:
@@ -204,14 +320,44 @@ def _names_match(name1: str, name2: str) -> bool:
     if n1 == n2:
         return True
     
+    words1 = n1.split()
+    words2 = n2.split()
+    
     # One contains the other (e.g., "Amanda" in "Amanda Lynn Plasse")
     if n1 in n2 or n2 in n1:
         # Only match if it's a word boundary (not partial word)
-        words1 = set(n1.split())
-        words2 = set(n2.split())
+        set1 = set(words1)
+        set2 = set(words2)
         # If all words of one are in the other, it's a match
-        if words1.issubset(words2) or words2.issubset(words1):
+        if set1.issubset(set2) or set2.issubset(set1):
             return True
+    
+    # Check for spelling variations (e.g., "Plasse" vs "Plosh" vs "Ploss")
+    # If first name matches exactly and last names are similar
+    if len(words1) >= 1 and len(words2) >= 1:
+        # Check if any word matches exactly
+        common_words = set(words1) & set(words2)
+        if common_words:
+            # If we have a common word (like a first name), check if other words are similar
+            remaining1 = [w for w in words1 if w not in common_words]
+            remaining2 = [w for w in words2 if w not in common_words]
+            
+            # If all remaining words are similar, consider it a match
+            if remaining1 and remaining2:
+                for w1 in remaining1:
+                    for w2 in remaining2:
+                        if _names_similar(w1, w2):
+                            return True
+            elif not remaining1 or not remaining2:
+                # One name is fully contained in the common words
+                return True
+        
+        # Also check if first words match and we're just dealing with middle/last name variations
+        # e.g., "Amanda Plasse" vs "Amanda Plosh"
+        if words1[0] == words2[0] and len(words1) >= 2 and len(words2) >= 2:
+            # First names match exactly, check if last names are similar
+            if _names_similar(words1[-1], words2[-1]):
+                return True
     
     return False
 
@@ -275,8 +421,11 @@ def deduplicate_extracted_data(all_data: dict) -> dict:
 
 def detect_conflicts(all_data: dict, client: OpenAI = None, model: str = None) -> list:
     """
-    Detect potential conflicts/inconsistencies across claims from different documents.
-    Uses simple heuristics first, then optionally LLM for deeper analysis.
+    Detect contradictions across claims from different documents.
+    
+    Two phases:
+    1. Heuristic: Flag cross-document claims about same subject (for awareness, low priority)
+    2. LLM: Find real contradictions where statements cannot both be true (high priority)
     """
     
     conflicts = []
@@ -285,31 +434,32 @@ def detect_conflicts(all_data: dict, client: OpenAI = None, model: str = None) -
     if len(claims) < 2:
         return conflicts
     
-    # Group claims by subject (normalized)
+    # Phase 1: Heuristic - only flag CROSS-DOCUMENT claims (from 2+ different sources)
+    # This is for awareness, not necessarily contradictions
     by_subject = defaultdict(list)
     for claim in claims:
         subject = claim.get("subject", "").lower().strip()
         if subject:
             by_subject[subject].append(claim)
     
-    # Find subjects with multiple claims from different sources
     for subject, subject_claims in by_subject.items():
         sources = set(c.get("source", "") for c in subject_claims)
         
-        if len(sources) > 1 or len(subject_claims) > 1:
-            # Multiple claims about the same subject - potential conflict
+        # Only flag if claims come from MULTIPLE documents (cross-document)
+        if len(sources) > 1:
             unique_claim_texts = set(c.get("claim", "").lower() for c in subject_claims)
             
+            # Only flag if the claims are actually different
             if len(unique_claim_texts) > 1:
                 conflicts.append({
                     "subject": subject,
-                    "type": "potential_inconsistency",
+                    "type": "cross_document_claims",
                     "claims": subject_claims,
                     "sources": list(sources),
-                    "description": f"Multiple different claims about '{subject}' found across documents"
+                    "description": f"'{subject.title()}' is discussed in multiple documents with different claims"
                 })
     
-    # If we have an LLM client, do deeper conflict analysis
+    # Phase 2: LLM - find REAL contradictions (statements that cannot both be true)
     if client and model and claims:
         llm_conflicts = _detect_conflicts_with_llm(client, model, claims)
         conflicts.extend(llm_conflicts)
@@ -318,7 +468,7 @@ def detect_conflicts(all_data: dict, client: OpenAI = None, model: str = None) -
 
 
 def _detect_conflicts_with_llm(client: OpenAI, model: str, claims: list) -> list:
-    """Use LLM to detect semantic conflicts between claims."""
+    """Use LLM to detect contradictions AND inconsistencies in statements."""
     
     if len(claims) < 2:
         return []
@@ -326,28 +476,72 @@ def _detect_conflicts_with_llm(client: OpenAI, model: str, claims: list) -> list
     # Limit claims to avoid token limits
     claims_sample = claims[:50]
     
-    prompt = """Analyze these claims extracted from investigation documents.
-Identify any CONTRADICTIONS or INCONSISTENCIES between claims.
+    prompt = """You are an investigative analyst reviewing witness statements. Flag ONLY genuinely problematic contradictions or inconsistencies.
 
-Claims:
+## CONTRADICTIONS (High Priority) 🔴
+Statements about the SAME SPECIFIC EVENT that CANNOT BOTH BE TRUE:
+- Same event, different times: "I left at 8am" vs "I left at 10am"
+- Same moment, different locations: "I was at work at 3pm" vs "He was at her house at 3pm"
+- Statement vs physical evidence: "I never touched it" vs "Fingerprints match"
+- Conflicting direct observations: "Wearing red shirt" vs "Wearing blue shirt"
+
+## INCONSISTENCIES (Medium Priority) 🟡
+SAME PERSON describing the SAME EVENT differently across statements:
+- Changed timeline: "I arrived at 8" in Interview 1, "I arrived at 9" in Interview 2
+- Added/removed people: First account mentions X present, second omits X entirely
+- Sequence change: "I called then drove over" vs later saying "I drove then called"
+- Key fact change: First statement says X happened, later denies or changes X
+
+## ABSOLUTELY DO NOT FLAG ❌
+These are NOT inconsistencies - do not flag them:
+- Different emotions (suicidal AND caring about someone = both can be true)
+- Different topics (one claim about drugs, another about relationships)
+- Same event from different people's perspectives (they saw different things)
+- Complementary details (one adds info the other doesn't have)
+- General statements vs specific statements (unless they actually conflict)
+- Things that happened at different times
+- Different aspects of someone's character or mental state
+
+CRITICAL: An inconsistency requires the SAME TOPIC being described DIFFERENTLY by the SAME PERSON or about the SAME SPECIFIC MOMENT.
+
+CLAIMS TO ANALYZE:
 """
     for i, claim in enumerate(claims_sample):
         prompt += f"\n{i+1}. [{claim.get('source', 'unknown')}] {claim.get('subject', 'unknown')}: {claim.get('claim', '')}"
         if claim.get('quote'):
-            prompt += f' (Quote: "{claim.get("quote")[:100]}...")'
+            quote_text = claim.get('quote')
+            if isinstance(quote_text, list):
+                quote_text = quote_text[0] if quote_text else ""
+            prompt += f' (Quote: "{str(quote_text)[:100]}...")'
     
     prompt += """
 
-Return ONLY valid JSON array of conflicts found:
+Before flagging anything, ask yourself:
+1. Are these claims about the EXACT SAME event/moment?
+2. Is it the SAME PERSON giving different accounts, OR two people describing the SAME moment differently?
+3. Do these claims actually conflict, or are they just different topics?
+
+If you can't answer YES to #1 AND #2, do NOT flag it.
+
+Return ONLY valid JSON array:
 [
     {
         "claim_indices": [index1, index2],
-        "type": "contradiction|inconsistency|discrepancy",
-        "description": "explanation of the conflict"
+        "type": "contradiction|inconsistency",
+        "severity": "high|medium",
+        "category": "timeline|location|sequence|story_change",
+        "same_event": "what specific event/moment both claims are about",
+        "claim1_says": "what the first claim asserts about that event",
+        "claim2_says": "how the second claim differs about THE SAME event",
+        "investigative_note": "why an investigator should care about this discrepancy"
     }
 ]
 
-If no conflicts found, return empty array: []
+- "high" severity = cannot both be true (real contradiction)
+- "medium" severity = same event described differently (suspicious inconsistency)
+
+Return empty array [] if no genuine conflicts found. Most claim sets will have zero conflicts.
+Be extremely conservative - false positives waste investigator time.
 """
     
     try:
@@ -386,6 +580,120 @@ If no conflicts found, return empty array: []
         return []
 
 
+def analyze_investigative_notes(client: OpenAI, model: str, all_data: dict) -> list:
+    """
+    Analyze extracted data across all documents to identify factual observations
+    that warrant investigative follow-up.
+    
+    IMPORTANT: This function only identifies OBJECTIVE, VERIFIABLE facts.
+    It does NOT make psychological judgments or assess credibility subjectively.
+    """
+    
+    claims = all_data.get("claims", [])
+    events = all_data.get("events", [])
+    entities = all_data.get("entities", [])
+    
+    if len(claims) < 2:
+        return []
+    
+    # Get people for context - build as simple dicts
+    people = [e for e in entities if e.get("type") == "Person"]
+    people_summary = [{"name": p.get("name"), "description": p.get("description")} for p in people[:20]]
+    
+    # Build JSON strings outside f-string to avoid escaping issues
+    people_json = json.dumps(people_summary, indent=2)
+    claims_json = json.dumps(claims[:40], indent=2)
+    events_json = json.dumps(events[:20], indent=2)
+    
+    prompt = f"""Analyze this extracted evidence and identify FACTUAL OBSERVATIONS that investigators should be aware of.
+
+CRITICAL RULES - READ CAREFULLY:
+1. ONLY flag things that are OBJECTIVELY VERIFIABLE from the documents
+2. You MUST cite specific quotes as evidence for every observation
+3. DO NOT make psychological judgments (nervous, evasive, suspicious, rehearsed, lying)
+4. DO NOT assess credibility, character, or intent
+5. DO NOT speculate about what someone was thinking or feeling
+6. Present FACTS ONLY, not interpretations
+7. If you cannot cite a specific quote, do not include the observation
+
+ACCEPTABLE observations (factual):
+✓ "In Document A, X said they left at 8am. In Document B, X said they left at 10am." (statement_change)
+✓ "X states they were at the victim's location on the morning of the incident." (proximity_to_incident)  
+✓ "X claims Y was present, but no statement from Y exists in the documents." (unverified_claim)
+✓ "X denies being in the kitchen, but fingerprints matching X were found there." (physical_evidence_conflict)
+✓ "There is a 3-hour gap in X's account between 2pm and 5pm." (timeline_gap)
+✓ "Documents show X had a financial dispute with the victim over $500." (financial_connection)
+
+NOT ACCEPTABLE (subjective/inferential):
+✗ "X's alibi seems rehearsed or overly detailed"
+✗ "X appears evasive or nervous"
+✗ "X's behavior is suspicious"
+✗ "X may be lying"
+✗ "X seems credible/not credible"
+
+PEOPLE IN THE CASE:
+{people_json}
+
+CLAIMS/STATEMENTS MADE:
+{claims_json}
+
+TIMELINE OF EVENTS:
+{events_json}
+
+Return ONLY valid JSON array. Each observation MUST have specific quotes as evidence:
+[
+    {{
+        "type": "statement_change|timeline_gap|proximity_to_incident|physical_evidence_conflict|unverified_claim|financial_connection",
+        "subject": "person or topic this concerns",
+        "observation": "neutral, factual description of what the documents show",
+        "evidence": [
+            {{"document": "filename", "quote": "exact quote from document"}},
+            {{"document": "filename", "quote": "second quote if comparing statements"}}
+        ],
+        "follow_up_question": "factual question this raises (not accusatory)"
+    }}
+]
+
+If no significant factual observations found, return empty array: []
+"""
+
+    try:
+        resp = client.responses.create(model=model, input=prompt)
+        response_text = resp.output_text.strip()
+        
+        # Handle markdown code blocks
+        if response_text.startswith("```"):
+            lines = response_text.split("\n")
+            json_lines = []
+            in_json = False
+            for line in lines:
+                if line.startswith("```") and not in_json:
+                    in_json = True
+                    continue
+                elif line.startswith("```") and in_json:
+                    break
+                elif in_json:
+                    json_lines.append(line)
+            response_text = "\n".join(json_lines)
+        
+        notes = json.loads(response_text)
+        
+        # Validate each note has required evidence
+        validated_notes = []
+        for note in notes:
+            if note.get("evidence") and len(note["evidence"]) > 0:
+                # Ensure evidence has quotes
+                has_quote = any(e.get("quote") for e in note["evidence"])
+                if has_quote:
+                    validated_notes.append(note)
+        
+        return validated_notes
+        
+    except Exception as e:
+        print(f"Investigative notes analysis error: {e}")
+        return []
+
+
 def remove_document_extraction(doc_name: str) -> dict:
     """Remove all extracted data for a specific document."""
     all_data = load_extracted()
@@ -394,21 +702,35 @@ def remove_document_extraction(doc_name: str) -> dict:
     if doc_name in all_data.get("documents", []):
         all_data["documents"].remove(doc_name)
     
+    # Helper to check if source matches (handles both string and list sources)
+    def source_matches(item_source, target_doc):
+        if isinstance(item_source, list):
+            return target_doc in item_source
+        return item_source == target_doc
+    
     # Filter out entities from this document
-    all_data["entities"] = [e for e in all_data.get("entities", []) if e.get("source") != doc_name]
+    all_data["entities"] = [e for e in all_data.get("entities", []) 
+                           if not source_matches(e.get("source"), doc_name)]
     
     # Filter out claims from this document
-    all_data["claims"] = [c for c in all_data.get("claims", []) if c.get("source") != doc_name]
+    all_data["claims"] = [c for c in all_data.get("claims", []) 
+                         if not source_matches(c.get("source"), doc_name)]
     
     # Filter out events from this document
-    all_data["events"] = [e for e in all_data.get("events", []) if e.get("source") != doc_name]
+    all_data["events"] = [e for e in all_data.get("events", []) 
+                         if not source_matches(e.get("source"), doc_name)]
+    
+    # Filter out relationships from this document
+    all_data["relationships"] = [r for r in all_data.get("relationships", []) 
+                                 if not source_matches(r.get("source"), doc_name)]
     
     # Filter out key facts from this document
     all_data["key_facts"] = [f for f in all_data.get("key_facts", []) 
-                            if isinstance(f, dict) and f.get("source") != doc_name]
+                            if isinstance(f, dict) and not source_matches(f.get("source"), doc_name)]
     
-    # Clear conflicts (will be recalculated)
+    # Clear conflicts and investigative notes (will be recalculated)
     all_data["conflicts"] = []
+    all_data["investigative_notes"] = []
     
     save_extracted(all_data)
     return all_data
@@ -424,6 +746,8 @@ def get_extraction_summary(all_data: dict = None) -> dict:
         "entities": len(all_data.get("entities", [])),
         "claims": len(all_data.get("claims", [])),
         "events": len(all_data.get("events", [])),
+        "relationships": len(all_data.get("relationships", [])),
+        "investigative_notes": len(all_data.get("investigative_notes", [])),
         "conflicts": len(all_data.get("conflicts", [])),
         "key_facts": len(all_data.get("key_facts", []))
     }

@@ -24,7 +24,8 @@ from src.ask import ask_with_file_search
 from src.extract import (
     extract_from_document, load_extracted, save_extracted, 
     merge_extraction, detect_conflicts, get_extraction_summary,
-    remove_document_extraction, deduplicate_extracted_data
+    remove_document_extraction, deduplicate_extracted_data,
+    analyze_investigative_notes
 )
 from src.router import classify_query, answer_exhaustive_query, should_use_extracted_data
 from web.websocket import InvestigationWebSocketManager

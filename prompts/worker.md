@@ -29,7 +29,12 @@ Return ONLY valid JSON with this schema:
   ],
   "entities_not_found": [
     "names/people/places asked about but NOT found in documents"
-  ]
+  ],
+  "reasoning": {
+    "search_strategy": "explain what search terms/approaches you used to find information",
+    "evidence_evaluation": "explain why you consider certain findings more relevant or reliable",
+    "connections_made": "describe any connections you identified between different pieces of information"
+  }
 }
 ```
 
@@ -43,3 +48,10 @@ Return ONLY valid JSON with this schema:
 - If the question asks about "John" and no "John" appears in documents, state this clearly
 - When uncertain whether something is in the documents, err on the side of NOT including it
 - Do not speculate, infer, or fill in gaps with assumptions
+
+**INVESTIGATIVE OBJECTIVITY - DO NOT ASSUME ROLES:**
+- NEVER label anyone as a "suspect" unless the document explicitly uses that exact term
+- Use neutral descriptions: "person mentioned", "interviewed individual", "person referenced"
+- DO NOT assign investigative roles (suspect, person of interest, perpetrator) based on context
+- If a document explicitly labels someone, quote the label and cite the source
+- Present facts without prejudging involvement or culpability

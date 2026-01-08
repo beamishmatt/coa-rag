@@ -60,13 +60,28 @@ CONTENT GUIDELINES:
 - Be concise but thorough - don't pad with unnecessary text
 - If the data doesn't fully answer the question, acknowledge limitations
 
+REASONING REQUIREMENTS:
+- After presenting findings, include a brief "Reasoning" section
+- Explain HOW you arrived at your conclusions based on the evidence
+- Describe what evidence you found most relevant and why
+- If you connected multiple pieces of information, explain those connections
+- If you made any inferences, explicitly state them and justify with evidence
+
 CRITICAL ANTI-HALLUCINATION RULES:
 - ONLY include information that appears in the extracted data provided
 - If someone asks about a person/entity NOT in the data, say "No information found about [name] in the documents"
 - NEVER invent names, dates, facts, or relationships not explicitly in the data
 - If the extracted data is empty or doesn't contain relevant information, say so clearly
 - Do not fill gaps with assumptions or general knowledge
-- When uncertain, state "The documents do not specify..." rather than guessing"""
+- When uncertain, state "The documents do not specify..." rather than guessing
+
+INVESTIGATIVE OBJECTIVITY (CRITICAL):
+- NEVER assume or label anyone as a "suspect" unless the document explicitly uses that exact term
+- When listing people, use neutral descriptions: "person mentioned", "interviewed individual", "person referenced"
+- DO NOT assign investigative roles (suspect, person of interest, perpetrator) based on your interpretation
+- If a document explicitly labels someone, quote the label and cite the source document
+- Present facts objectively without prejudging guilt, innocence, or involvement
+- Let the investigator draw their own conclusions about roles and culpability"""
 
     user_prompt = f"""User's Question: {question}
 
@@ -209,6 +224,13 @@ def _is_comprehensive_query(question: str) -> bool:
         "overview", "what do we know",
         "what entities", "what people", "what events",
         "list the ", "list all",
+        # Relationship queries
+        "relationships", "all relationships", "connections",
+        "who knows", "connected to", "related to",
+        # Investigative notes queries
+        "investigative notes", "follow up", "follow-up",
+        "what should we investigate", "what to investigate",
+        "observations", "factual observations",
     ]
     
     for keyword in comprehensive_keywords:
@@ -319,12 +341,35 @@ def get_query_category(question: str, extracted_data: dict = None) -> str:
     """
     Get more detailed category for exhaustive queries to determine response type.
     
-    Returns: "conflicts", "entities", "events", "summary", or "general"
+    Returns: "conflicts", "entities", "events", "relationships", "investigative_notes", "summary", or "general"
     """
     question_lower = question.lower()
     
     if any(kw in question_lower for kw in ["inconsisten", "contradict", "conflict", "discrepan"]):
         return "conflicts"
+    
+    # Check for relationship queries
+    relationship_keywords = [
+        "relationship", "relationships", "connected", "connection", 
+        "know each other", "related to", "who knows", "associated with",
+        "friends with", "family", "boyfriend", "girlfriend", "spouse",
+        "coworker", "between"
+    ]
+    # More specific patterns for relationships
+    if any(kw in question_lower for kw in relationship_keywords):
+        # Make sure it's asking about relationships between people, not just using the word
+        if any(p in question_lower for p in ["between", "who knows", "connected", "relationship"]):
+            return "relationships"
+    
+    # Check for investigative notes queries
+    investigative_keywords = [
+        "investigative notes", "investigative note", "follow up", "follow-up",
+        "what should we investigate", "what to investigate", "investigate further",
+        "observations", "factual observations", "notable", "noteworthy",
+        "what stands out", "what's important", "gaps in", "missing information"
+    ]
+    if any(kw in question_lower for kw in investigative_keywords):
+        return "investigative_notes"
     
     # Check for entity-related queries
     entity_keywords = ["people", "person", "everyone", "who", "entities", "organizations", 
@@ -388,6 +433,10 @@ def answer_exhaustive_query(
         raw_response, success = _answer_entities_query(question, extracted_data)
     elif category == "events":
         raw_response, success = _answer_events_query(extracted_data)
+    elif category == "relationships":
+        raw_response, success = _answer_relationships_query(question, extracted_data)
+    elif category == "investigative_notes":
+        raw_response, success = _answer_investigative_notes_query(question, extracted_data)
     elif category == "summary":
         raw_response, success = _answer_summary_query(extracted_data)
     else:
@@ -413,34 +462,116 @@ def _answer_conflicts_query(data: dict) -> Tuple[str, bool]:
             return ("No claims were extracted from the documents to analyze for inconsistencies.", True)
         
         return (
-            "## No Inconsistencies Detected\n\n"
+            "## No Contradictions Detected\n\n"
             f"Analyzed {len(claims)} claims across {len(data.get('documents', []))} document(s). "
-            "No direct contradictions or inconsistencies were identified.\n\n"
-            "_Note: This is based on extracted claims. For deeper analysis, try asking specific questions about particular topics._",
+            "No direct contradictions were identified.\n\n"
+            "_Note: The system looks for statements that CANNOT both be true (e.g., different times, locations, or facts). "
+            "Different statements about the same person are not flagged unless they actually contradict each other._",
             True
         )
     
-    response = "## Detected Inconsistencies & Conflicts\n\n"
-    response += f"Found **{len(conflicts)}** potential inconsistencies across the documents:\n\n"
+    # Separate by type and severity
+    high_severity = [c for c in conflicts if c.get("severity") == "high" or c.get("type") == "contradiction"]
+    medium_severity = [c for c in conflicts if c.get("severity") == "medium" or c.get("type") == "inconsistency"]
+    cross_doc_claims = [c for c in conflicts if c.get("type") == "cross_document_claims"]
+    other_issues = [c for c in conflicts if c not in high_severity and c not in medium_severity and c not in cross_doc_claims]
     
-    for i, conflict in enumerate(conflicts, 1):
-        response += f"### {i}. {conflict.get('subject', 'Unknown Subject').title()}\n\n"
-        response += f"**Type:** {conflict.get('type', 'potential_inconsistency').replace('_', ' ').title()}\n\n"
+    response = "## Detected Issues in Statements\n\n"
+    
+    # Show high severity (contradictions) first
+    if high_severity:
+        response += f"### 🔴 Contradictions ({len(high_severity)})\n\n"
+        response += "_Statements that cannot both be true:_\n\n"
         
-        if conflict.get("description"):
-            response += f"{conflict['description']}\n\n"
-        
-        response += "**Conflicting Claims:**\n\n"
-        for claim in conflict.get("claims", []):
-            source = claim.get("source", "Unknown source")
-            claim_text = claim.get("claim", "No claim text")
-            quote = claim.get("quote", "")
+        for i, conflict in enumerate(high_severity, 1):
+            category = conflict.get('category', 'unknown').replace('_', ' ').title()
+            same_event = conflict.get('same_event') or conflict.get('what_differs') or conflict.get('what_conflicts', 'Unknown')
             
-            response += f"**{source}:** {claim_text}\n\n"
-            if quote:
-                response += f"> \"{quote[:200]}{'...' if len(quote) > 200 else ''}\"\n\n"
+            response += f"#### {i}. {category}\n\n"
+            response += f"**Regarding:** {same_event}\n\n"
+            
+            if conflict.get("claim1_says") and conflict.get("claim2_says"):
+                response += f"**Statement 1:** {conflict['claim1_says']}\n\n"
+                response += f"**Statement 2:** {conflict['claim2_says']}\n\n"
+            
+            if conflict.get("investigative_note"):
+                response += f"**Why it matters:** {conflict['investigative_note']}\n\n"
+            elif conflict.get("why_contradictory"):
+                response += f"**Why contradictory:** {conflict['why_contradictory']}\n\n"
+            
+            # Show source evidence
+            response += "**Source Evidence:**\n\n"
+            for claim in conflict.get("claims", []):
+                source = claim.get("source", "Unknown source")
+                claim_text = claim.get("claim", "No claim text")
+                quote = claim.get("quote", "")
+                
+                response += f"- *{source}*: {claim_text}\n"
+                if quote:
+                    quote_text = quote if isinstance(quote, str) else (quote[0] if quote else "")
+                    if quote_text:
+                        response += f"  > \"{str(quote_text)[:150]}{'...' if len(str(quote_text)) > 150 else ''}\"\n"
+                response += "\n"
+            
+            response += "---\n\n"
+    
+    # Show medium severity (inconsistencies)
+    if medium_severity:
+        response += f"### 🟡 Inconsistencies ({len(medium_severity)})\n\n"
+        response += "_Same event described differently - may warrant follow-up:_\n\n"
         
-        response += "---\n\n"
+        for i, conflict in enumerate(medium_severity, 1):
+            category = conflict.get('category', 'unknown').replace('_', ' ').title()
+            same_event = conflict.get('same_event') or conflict.get('what_differs') or conflict.get('what_conflicts', 'Unknown')
+            
+            response += f"#### {i}. {category}\n\n"
+            response += f"**Regarding:** {same_event}\n\n"
+            
+            if conflict.get("claim1_says") and conflict.get("claim2_says"):
+                response += f"**Statement 1:** {conflict['claim1_says']}\n\n"
+                response += f"**Statement 2:** {conflict['claim2_says']}\n\n"
+            
+            if conflict.get("investigative_note"):
+                response += f"**Why it matters:** {conflict['investigative_note']}\n\n"
+            
+            # Show source evidence
+            response += "**Sources:**\n\n"
+            for claim in conflict.get("claims", []):
+                source = claim.get("source", "Unknown source")
+                claim_text = claim.get("claim", "No claim text")
+                response += f"- *{source}*: {claim_text}\n"
+            response += "\n---\n\n"
+    
+    if not high_severity and not medium_severity:
+        response += "_No contradictions or notable inconsistencies found in the statements._\n\n"
+    
+    # Show cross-document claims (for investigator awareness)
+    if cross_doc_claims:
+        response += f"### 📄 Cross-Document References ({len(cross_doc_claims)})\n\n"
+        response += "_The same subject is discussed in multiple documents. Review for consistency:_\n\n"
+        
+        for i, conflict in enumerate(cross_doc_claims, 1):
+            subject = conflict.get('subject', 'Unknown Subject').title()
+            sources = conflict.get('sources', [])
+            
+            response += f"**{i}. {subject}** — mentioned in: {', '.join(sources)}\n\n"
+            
+            for claim in conflict.get("claims", [])[:3]:  # Limit to 3 claims
+                claim_text = claim.get("claim", "")
+                source = claim.get("source", "")
+                response += f"- *{source}*: {claim_text}\n"
+            
+            if len(conflict.get("claims", [])) > 3:
+                response += f"- _...and {len(conflict['claims']) - 3} more claims_\n"
+            
+            response += "\n"
+    
+    # Show any other issues
+    if other_issues:
+        response += f"### ⚪ Other Notes ({len(other_issues)})\n\n"
+        for i, conflict in enumerate(other_issues, 1):
+            subject = conflict.get('subject', 'Unknown Subject').title()
+            response += f"**{i}. {subject}**: {conflict.get('description', 'No details')}\n\n"
     
     return (response, True)
 
@@ -473,6 +604,9 @@ def _answer_entities_query(question: str, data: dict) -> Tuple[str, bool]:
     
     # Otherwise, handle as a listing query
     # Filter by type if specified
+    # Check if user is asking about role-based categories (we don't assume roles)
+    role_based_query = any(kw in question_lower for kw in ["suspects", "witnesses", "victims", "perpetrator", "person of interest"])
+    
     if any(kw in question_lower for kw in ["people", "person", "everyone", "names", "name", "individuals", "suspects", "witnesses", "victims"]):
         filtered = [e for e in entities if e.get("type", "").lower() == "person"]
         entity_type = "People"
@@ -499,6 +633,11 @@ def _answer_entities_query(question: str, data: dict) -> Tuple[str, bool]:
             unique_entities.append(e)
     
     response = f"## {entity_type} Mentioned in Documents\n\n"
+    
+    # Add disclaimer for role-based queries
+    if role_based_query:
+        response += "_**Note:** This system does not assume or assign investigative roles (suspect, witness, victim). The following is a list of all people mentioned in the documents. Any role designations shown are direct quotes from the source documents, not conclusions drawn by this system._\n\n"
+    
     response += f"Found **{len(unique_entities)}** unique {entity_type.lower()}:\n\n"
     
     for entity in unique_entities:
@@ -671,6 +810,8 @@ def _answer_summary_query(data: dict) -> Tuple[str, bool]:
     response += f"- **Entities Identified:** {summary['entities']}\n"
     response += f"- **Claims Extracted:** {summary['claims']}\n"
     response += f"- **Events Found:** {summary['events']}\n"
+    response += f"- **Relationships Identified:** {summary.get('relationships', 0)}\n"
+    response += f"- **Investigative Notes:** {summary.get('investigative_notes', 0)}\n"
     response += f"- **Potential Conflicts:** {summary['conflicts']}\n\n"
     
     if key_facts:
@@ -702,6 +843,216 @@ def _answer_summary_query(data: dict) -> Tuple[str, bool]:
     return (response, True)
 
 
+def _answer_relationships_query(question: str, data: dict) -> Tuple[str, bool]:
+    """Generate response for relationship queries."""
+    from collections import defaultdict
+    
+    relationships = data.get("relationships", [])
+    
+    if not relationships:
+        return (
+            "## No Relationships Extracted\n\n"
+            "No relationships have been extracted from the documents yet.\n\n"
+            "Relationships are extracted when documents are uploaded. "
+            "Try re-uploading documents or asking about specific people to see their connections.",
+            True
+        )
+    
+    # Check if asking about specific people
+    potential_names = _extract_potential_names(question)
+    
+    if potential_names:
+        # Filter to relationships involving mentioned people
+        relevant = []
+        for rel in relationships:
+            p1 = _normalize_for_matching(rel.get("person1", ""))
+            p2 = _normalize_for_matching(rel.get("person2", ""))
+            
+            for name in potential_names:
+                name_norm = _normalize_for_matching(name)
+                name_words = set(name_norm.split())
+                p1_words = set(p1.split())
+                p2_words = set(p2.split())
+                
+                # Check if name matches either person in relationship
+                if (name_norm in p1 or name_norm in p2 or 
+                    name_words & p1_words or name_words & p2_words):
+                    if rel not in relevant:
+                        relevant.append(rel)
+                    break
+        
+        if relevant:
+            response = f"## Relationships Involving {', '.join(potential_names)}\n\n"
+            response += f"Found **{len(relevant)}** relationship(s):\n\n"
+            
+            for rel in relevant:
+                person1 = rel.get('person1', 'Unknown')
+                person2 = rel.get('person2', 'Unknown')
+                rel_type = rel.get('type', 'unknown').replace('_', ' ')
+                description = rel.get('description', '')
+                quote = rel.get('quote', '')
+                source = rel.get('source', 'Unknown')
+                
+                response += f"### {person1} ↔ {person2}\n\n"
+                response += f"**Type:** {rel_type.title()}\n\n"
+                
+                if description:
+                    response += f"{description}\n\n"
+                
+                if quote:
+                    response += f"> \"{quote[:250]}{'...' if len(quote) > 250 else ''}\"\n\n"
+                
+                if isinstance(source, list):
+                    response += f"*Sources: {', '.join(source)}*\n\n"
+                else:
+                    response += f"*Source: {source}*\n\n"
+                
+                response += "---\n\n"
+            
+            return (response, True)
+        else:
+            return (
+                f"## No Relationships Found\n\n"
+                f"No relationships involving {', '.join(potential_names)} were found in the documents.\n\n"
+                f"**Available relationships involve:** " + 
+                ", ".join(set(r.get("person1", "") for r in relationships[:10])) +
+                "\n\n*Try asking about one of these people instead.*",
+                True
+            )
+    
+    # General relationship listing - group by type
+    response = "## All Identified Relationships\n\n"
+    response += f"Found **{len(relationships)}** relationship(s) across documents:\n\n"
+    
+    by_type = defaultdict(list)
+    for rel in relationships:
+        rel_type = rel.get("type", "unknown")
+        by_type[rel_type].append(rel)
+    
+    for rel_type, rels in sorted(by_type.items(), key=lambda x: -len(x[1])):
+        response += f"### {rel_type.replace('_', ' ').title()} ({len(rels)})\n\n"
+        
+        for rel in rels:
+            person1 = rel.get('person1', 'Unknown')
+            person2 = rel.get('person2', 'Unknown')
+            description = rel.get('description', '')
+            source = rel.get('source', 'Unknown')
+            
+            response += f"- **{person1}** ↔ **{person2}**"
+            if description:
+                response += f": {description[:100]}{'...' if len(description) > 100 else ''}"
+            response += "\n"
+            
+            if isinstance(source, list):
+                response += f"  *Sources: {', '.join(source)}*\n"
+            else:
+                response += f"  *Source: {source}*\n"
+            response += "\n"
+        
+        response += "\n"
+    
+    return (response, True)
+
+
+def _answer_investigative_notes_query(question: str, data: dict) -> Tuple[str, bool]:
+    """Generate response for investigative notes queries."""
+    
+    notes = data.get("investigative_notes", [])
+    
+    if not notes:
+        return (
+            "## No Investigative Notes\n\n"
+            "No investigative notes have been generated yet.\n\n"
+            "Investigative notes are factual observations identified by cross-referencing "
+            "statements across documents. They highlight:\n\n"
+            "- **Statement changes** between documents\n"
+            "- **Timeline gaps** in accounts\n"
+            "- **Proximity to incident** (who was where when)\n"
+            "- **Unverified claims** (statements without corroboration)\n"
+            "- **Physical evidence conflicts**\n"
+            "- **Financial connections**\n\n"
+            "*Notes are generated when documents are analyzed. Try re-running the analysis or uploading more documents.*",
+            True
+        )
+    
+    # Check if asking about specific person
+    potential_names = _extract_potential_names(question)
+    
+    if potential_names:
+        # Filter to notes about mentioned people
+        relevant = []
+        for note in notes:
+            subject = _normalize_for_matching(note.get("subject", ""))
+            subject_words = set(subject.split())
+            
+            for name in potential_names:
+                name_norm = _normalize_for_matching(name)
+                name_words = set(name_norm.split())
+                
+                if name_norm in subject or name_words & subject_words:
+                    if note not in relevant:
+                        relevant.append(note)
+                    break
+        
+        if relevant:
+            notes = relevant
+    
+    # Build response
+    response = "## 📋 Investigative Notes\n\n"
+    
+    if potential_names:
+        response += f"*Filtered to notes concerning: {', '.join(potential_names)}*\n\n"
+    
+    response += f"Found **{len(notes)}** factual observation(s) that may warrant follow-up:\n\n"
+    response += "_Note: These are objective observations from the documents, not judgments or accusations._\n\n"
+    response += "---\n\n"
+    
+    # Group by type
+    type_labels = {
+        "statement_change": "📝 Statement Changes",
+        "timeline_gap": "⏰ Timeline Gaps",
+        "proximity_to_incident": "📍 Proximity to Incident",
+        "physical_evidence_conflict": "🔬 Physical Evidence Conflicts",
+        "unverified_claim": "❓ Unverified Claims",
+        "financial_connection": "💰 Financial Connections"
+    }
+    
+    from collections import defaultdict
+    by_type = defaultdict(list)
+    for note in notes:
+        note_type = note.get("type", "other")
+        by_type[note_type].append(note)
+    
+    for note_type, type_notes in by_type.items():
+        type_label = type_labels.get(note_type, note_type.replace("_", " ").title())
+        response += f"### {type_label}\n\n"
+        
+        for i, note in enumerate(type_notes, 1):
+            subject = note.get("subject", "Unknown")
+            observation = note.get("observation", "No description")
+            evidence = note.get("evidence", [])
+            follow_up = note.get("follow_up_question", "")
+            
+            response += f"**{i}. Regarding: {subject}**\n\n"
+            response += f"{observation}\n\n"
+            
+            if evidence:
+                response += "**Evidence:**\n\n"
+                for ev in evidence:
+                    doc = ev.get("document", "Unknown")
+                    quote = ev.get("quote", "")
+                    if quote:
+                        response += f"- *{doc}*: \"{quote[:200]}{'...' if len(quote) > 200 else ''}\"\n"
+                response += "\n"
+            
+            if follow_up:
+                response += f"**Follow-up question:** {follow_up}\n\n"
+            
+            response += "---\n\n"
+    
+    return (response, True)
+
+
 def _answer_general_exhaustive(question: str, data: dict) -> Tuple[str, bool]:
     """Fallback for general exhaustive queries."""
     
@@ -712,12 +1063,16 @@ def _answer_general_exhaustive(question: str, data: dict) -> Tuple[str, bool]:
     response += f"- **{summary['entities']}** entities (people, organizations, locations)\n"
     response += f"- **{summary['claims']}** claims/statements\n"
     response += f"- **{summary['events']}** events\n"
+    response += f"- **{summary['relationships']}** relationships identified\n"
+    response += f"- **{summary['investigative_notes']}** investigative notes\n"
     response += f"- **{summary['conflicts']}** potential conflicts detected\n\n"
     
     response += "For more specific information, try asking:\n"
     response += "- \"List all people mentioned\"\n"
     response += "- \"Show me the timeline of events\"\n"
     response += "- \"Find all inconsistencies\"\n"
+    response += "- \"What relationships exist between people?\"\n"
+    response += "- \"Show me investigative notes\"\n"
     response += "- \"Give me a summary of all documents\"\n"
     
     return (response, True)

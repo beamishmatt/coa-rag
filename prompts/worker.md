@@ -13,30 +13,29 @@ Return ONLY valid JSON with this schema:
 {
   "relevant_findings": [
     {
-      "finding": "specific fact or quote from documents",
-      "relevance": "how this helps answer the question",
+      "finding": "exact quote or specific fact from documents - NO interpretation",
       "source": "filename or document reference"
     }
   ],
   "direct_answers": [
     "any direct answers to the question found in documents"
   ],
-  "related_context": [
-    "additional context that might be useful"
-  ],
   "unanswered_aspects": [
     "parts of the question that couldn't be answered from documents"
   ],
   "entities_not_found": [
     "names/people/places asked about but NOT found in documents"
-  ],
-  "reasoning": {
-    "search_strategy": "explain what search terms/approaches you used to find information",
-    "evidence_evaluation": "explain why you consider certain findings more relevant or reliable",
-    "connections_made": "describe any connections you identified between different pieces of information"
-  }
+  ]
 }
 ```
+
+**ABSOLUTELY NO INTERPRETIVE CONTENT:**
+- Do NOT include a "relevance" field - just report the facts
+- Do NOT include a "reasoning" section - just report what you found
+- Do NOT include "related_context" - only report direct answers to the question
+- Do NOT describe findings as "suspicious", "significant", "concerning", or "noteworthy"
+- Do NOT speculate about motives, intentions, or meanings
+- Do NOT draw connections between facts unless explicitly stated in documents
 
 **CRITICAL RULES - DO NOT HALLUCINATE:**
 - ONLY report information that is EXPLICITLY stated in the documents
@@ -55,3 +54,9 @@ Return ONLY valid JSON with this schema:
 - DO NOT assign investigative roles (suspect, person of interest, perpetrator) based on context
 - If a document explicitly labels someone, quote the label and cite the source
 - Present facts without prejudging involvement or culpability
+
+**STATEMENT ATTRIBUTION:**
+- Always note WHO made each statement (witness, interviewed person, officer, etc.)
+- Flag self-serving statements (someone describing their own alibi/whereabouts)
+- Do not present claims as facts - report "X said Y" not "Y happened"
+- When someone describes their own actions or whereabouts, note this is their account

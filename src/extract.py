@@ -51,6 +51,7 @@ def extract_from_document(client: OpenAI, model: str, doc_text: str, doc_name: s
 
 Return ONLY valid JSON with this exact structure:
 {
+    "document_date": "date when this document/interview was created (if stated)",
     "entities": [
         {"name": "full name or title", "type": "Person|Organization|Location|Date|Money|Other", "description": "brief context about this entity", "mentions": ["quote where mentioned"]}
     ],
@@ -58,7 +59,7 @@ Return ONLY valid JSON with this exact structure:
         {"subject": "who or what the claim is about", "claim": "what is being stated/claimed", "quote": "exact quote from document", "context": "surrounding context"}
     ],
     "events": [
-        {"date": "date if mentioned or 'unknown'", "description": "what happened", "people_involved": ["names"], "location": "where if mentioned"}
+        {"date": "when the event ACTUALLY HAPPENED or 'unknown'", "description": "what happened", "people_involved": ["names"], "location": "where if mentioned", "date_source": "how the date was determined"}
     ],
     "relationships": [
         {"person1": "name of first person", "person2": "name of second person", "type": "relationship type", "description": "context about the relationship", "quote": "supporting quote from document"}
@@ -67,6 +68,24 @@ Return ONLY valid JSON with this exact structure:
         "important factual statements from the document"
     ]
 }
+
+CRITICAL DATE HANDLING - READ CAREFULLY:
+There are TWO types of dates in documents:
+1. DOCUMENT DATE: When the interview/statement was recorded (e.g., "Statement taken on November 1, 2013")
+2. EVENT DATE: When the described events actually happened (often DIFFERENT from document date!)
+
+For INTERVIEW TRANSCRIPTS and WITNESS STATEMENTS:
+- The document_date is when the interview occurred
+- Events described BY the interviewee happened at a DIFFERENT time (usually earlier)
+- For each event, use the date WHEN THE EVENT ACTUALLY HAPPENED, NOT the interview date
+- If the interviewee says "I delivered weed to her that day" referring to a past event, determine WHEN that day was
+- Look for context clues: "the day she was killed", "that morning", "back in August", etc.
+- If the exact event date is unclear, use "unknown" or contextual dating like "before [death date]" or "around August 2011"
+- NEVER use the interview/document date as the event date unless the event literally occurred during the interview
+
+VALIDATION: If an event involves interaction with a person who is deceased:
+- The event MUST have occurred BEFORE that person's death
+- If someone was killed on 08/26/2011, any interaction with them must be dated on or before 08/26/2011
 
 RELATIONSHIP TYPES to look for:
 - Family: parent, child, sibling, spouse, ex-spouse, relative
@@ -84,9 +103,21 @@ Rules:
 - For events, capture anything with a temporal or sequential nature
 - For relationships, extract ANY connection between people mentioned - even indirect ones
 - Be thorough - this extraction will be used to answer comprehensive queries later
-- NEVER label anyone as "suspect" - use neutral terms like "person mentioned" or "interviewed individual"
-- DO NOT assign investigative roles (suspect, person of interest) - only extract what the document explicitly states
-- If a document explicitly labels someone (e.g., "Suspect: John Doe"), extract that as a QUOTE, not as your own classification
+
+ENTITY LABELING - CRITICAL FOR PERSONS:
+- NEVER describe someone as "Suspect" or "Suspect in the case" as your own classification
+- If a document explicitly lists someone under a "Suspect(s):" field or similar label:
+  → Description MUST be: "Listed under 'Suspect(s)' in police report" - quoting the document's exact label
+  → This makes clear the label comes from the document, not from us
+- For all other persons, use NEUTRAL descriptions based on their role:
+  → "Person of interest; mentioned in connection with the case"
+  → "Interviewed individual"
+  → "Witness"
+  → "Person mentioned in case documents"
+  → "Reporting officer" (for law enforcement)
+- The description should explain WHO the person is and their ROLE, not assign guilt or suspicion
+- DO NOT use: "Suspect in the case", "Prime suspect", "Main suspect", or any variant
+- DO use quoted labels when the document provides them: "Listed under '[exact field name]' in [document type]"
 
 DOCUMENT:
 """
@@ -125,6 +156,9 @@ DOCUMENT:
             item["source"] = doc_name
         for item in extracted.get("events", []):
             item["source"] = doc_name
+            # Also tag with document_date if available for context
+            if extracted.get("document_date"):
+                item["document_date"] = extracted["document_date"]
         for item in extracted.get("relationships", []):
             item["source"] = doc_name
         for i, fact in enumerate(extracted.get("key_facts", [])):
@@ -152,6 +186,154 @@ DOCUMENT:
             "key_facts": [],
             "extraction_error": str(e)
         }
+
+
+def _parse_date(date_str: str) -> tuple:
+    """
+    Parse a date string into comparable components.
+    Returns (year, month, day) or None if unparseable.
+    """
+    if not date_str or date_str.lower() in ['unknown', 'unclear', 'unspecified']:
+        return None
+    
+    import re
+    
+    # Common date formats
+    patterns = [
+        # MM/DD/YYYY or M/D/YYYY
+        (r'(\d{1,2})/(\d{1,2})/(\d{4})', lambda m: (int(m.group(3)), int(m.group(1)), int(m.group(2)))),
+        # YYYY-MM-DD
+        (r'(\d{4})-(\d{1,2})-(\d{1,2})', lambda m: (int(m.group(1)), int(m.group(2)), int(m.group(3)))),
+        # Month DD, YYYY (e.g., "August 26, 2011")
+        (r'(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),?\s+(\d{4})', 
+         lambda m: (int(m.group(3)), _month_to_num(m.group(1)), int(m.group(2)))),
+        # DD Month YYYY (e.g., "26 August 2011")
+        (r'(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})',
+         lambda m: (int(m.group(3)), _month_to_num(m.group(2)), int(m.group(1)))),
+        # Just year
+        (r'^(\d{4})$', lambda m: (int(m.group(1)), 1, 1)),
+    ]
+    
+    for pattern, extractor in patterns:
+        match = re.search(pattern, date_str, re.IGNORECASE)
+        if match:
+            try:
+                return extractor(match)
+            except (ValueError, IndexError):
+                continue
+    
+    return None
+
+
+def _month_to_num(month_name: str) -> int:
+    """Convert month name to number."""
+    months = {
+        'january': 1, 'february': 2, 'march': 3, 'april': 4,
+        'may': 5, 'june': 6, 'july': 7, 'august': 8,
+        'september': 9, 'october': 10, 'november': 11, 'december': 12
+    }
+    return months.get(month_name.lower(), 1)
+
+
+def _date_after(date1: tuple, date2: tuple) -> bool:
+    """Check if date1 is after date2. Both are (year, month, day) tuples."""
+    if not date1 or not date2:
+        return False
+    return date1 > date2
+
+
+def validate_event_dates(all_data: dict) -> dict:
+    """
+    Validate event dates against known death dates.
+    Events involving deceased persons must predate their death.
+    
+    Returns the data with invalid dates flagged/corrected.
+    """
+    # Find death events to establish death dates
+    death_dates = {}
+    death_keywords = ['killed', 'murdered', 'death', 'died', 'fatal', 'homicide', 'deceased', 'body found', 'body discovered']
+    
+    events = all_data.get("events", [])
+    entities = all_data.get("entities", [])
+    
+    # First pass: identify death dates from events
+    for event in events:
+        description = event.get("description", "").lower()
+        if any(keyword in description for keyword in death_keywords):
+            people = event.get("people_involved", [])
+            date_str = event.get("date", "")
+            parsed_date = _parse_date(date_str)
+            
+            if parsed_date:
+                for person in people:
+                    person_lower = person.lower()
+                    # Check if this person is the victim (not just mentioned)
+                    if any(v in description for v in ['victim', person_lower]):
+                        death_dates[person_lower] = parsed_date
+    
+    # Also check entities for death dates
+    for entity in entities:
+        desc = entity.get("description", "").lower()
+        if any(keyword in desc for keyword in ['deceased', 'victim', 'killed', 'murdered']):
+            name = entity.get("name", "").lower()
+            # Try to find an associated death date from mentions
+            for mention in entity.get("mentions", []):
+                parsed = _parse_date(mention)
+                if parsed:
+                    death_dates[name] = parsed
+                    break
+    
+    # Second pass: validate all events
+    validation_issues = []
+    for i, event in enumerate(events):
+        event_date = _parse_date(event.get("date", ""))
+        if not event_date:
+            continue
+            
+        people = event.get("people_involved", [])
+        description = event.get("description", "").lower()
+        
+        # Skip death events themselves
+        if any(keyword in description for keyword in death_keywords):
+            continue
+        
+        for person in people:
+            person_lower = person.lower()
+            # Check against all known deceased persons (fuzzy match)
+            for deceased_name, death_date in death_dates.items():
+                # Check if names match (full name or partial)
+                name_parts = person_lower.split()
+                deceased_parts = deceased_name.split()
+                
+                # Match if any significant name part overlaps
+                if (person_lower in deceased_name or 
+                    deceased_name in person_lower or
+                    any(part in deceased_parts for part in name_parts if len(part) > 2)):
+                    
+                    if _date_after(event_date, death_date):
+                        # This is an impossible date!
+                        issue = {
+                            "event_index": i,
+                            "event": event,
+                            "person": person,
+                            "event_date": event.get("date"),
+                            "death_date": f"{death_date[1]}/{death_date[2]}/{death_date[0]}",
+                            "issue": f"Event date ({event.get('date')}) is after {person}'s death"
+                        }
+                        validation_issues.append(issue)
+                        
+                        # Fix the event: mark date as needing review
+                        event["date"] = f"unknown (before {death_date[1]}/{death_date[2]}/{death_date[0]})"
+                        event["date_validation_issue"] = f"Original date '{event.get('date', 'unknown')}' was after {person}'s death - corrected"
+                        event["date_source"] = "corrected - original date was interview date, not event date"
+    
+    if validation_issues:
+        all_data.setdefault("validation_issues", []).extend(validation_issues)
+        print(f"Found {len(validation_issues)} date validation issues")
+        for issue in validation_issues:
+            print(f"  - {issue['issue']}: {issue['event'].get('description', '')[:50]}...")
+    
+    return all_data
 
 
 def merge_extraction(all_data: dict, new_extraction: dict, doc_name: str) -> dict:
@@ -207,6 +389,9 @@ def merge_extraction(all_data: dict, new_extraction: dict, doc_name: str) -> dic
     
     # Merge key facts
     all_data.setdefault("key_facts", []).extend(new_extraction.get("key_facts", []))
+    
+    # Validate event dates against known death dates
+    all_data = validate_event_dates(all_data)
     
     return all_data
 

@@ -5,12 +5,123 @@ Routing strategy:
 - GRAPH: Entity lookups, comprehensive lists, conflicts, timelines - use preprocessed knowledge graph
 - VECTOR: Deep analysis, complex reasoning, multi-hop questions - use CoA + file_search
 - HYBRID: Start with graph, augment with vector if needed (future)
+- DEFLECT: Guilt/culpability determinations - gracefully decline to answer
 """
 
 import re
 from typing import Tuple, Optional, List
 from openai import OpenAI
 from .extract import load_extracted, get_extraction_summary
+
+
+# ============================================================================
+# GUILT QUERY DETECTION AND DEFLECTION
+# ============================================================================
+
+GUILT_DEFLECTION_RESPONSE = """## Query Outside System Scope
+
+I'm designed to help investigators organize, search, and analyze documentary evidence — **not** to make determinations of guilt or innocence.
+
+### What I Can Help With
+
+- **Finding information**: "What did [person] say about [topic]?"
+- **Listing entities**: "Who is mentioned in the documents?"
+- **Identifying inconsistencies**: "Are there any contradictions in the statements?"
+- **Building timelines**: "What events occurred on [date]?"
+- **Exploring relationships**: "What is the relationship between [person A] and [person B]?"
+
+### Why I Can't Determine Guilt
+
+Determining guilt is a complex legal and investigative judgment that requires:
+
+- Complete evidentiary record (I only see uploaded documents)
+- Legal standards and burden of proof considerations
+- Credibility assessments of witnesses
+- Forensic and physical evidence analysis
+- Due process protections
+
+My role is to help you **find and organize information** — the conclusions are yours to draw as the investigator.
+
+---
+
+*Try rephrasing your question to ask about specific facts, statements, or evidence in the documents.*"""
+
+
+def is_guilt_query(question: str) -> bool:
+    """
+    Detect if a question is asking the system to determine guilt, culpability,
+    or make legal/investigative conclusions about who committed an offense.
+    
+    Args:
+        question: The user's question
+        
+    Returns:
+        True if the query is asking about guilt determination
+    """
+    question_lower = question.lower().strip()
+    
+    # Direct guilt/culpability questions
+    guilt_patterns = [
+        r'\bwho\s+is\s+guilty\b',
+        r'\bwho\s+is\s+the\s+guilty\b',
+        r'\bwho\'?s\s+guilty\b',
+        r'\bwho\s+committed\b',
+        r'\bwho\s+did\s+it\b',
+        r'\bwho\s+is\s+responsible\s+for\s+(the\s+)?(crime|murder|death|killing|incident|offense)\b',
+        r'\bwho\s+killed\b',
+        r'\bwho\s+murdered\b',
+        r'\bis\s+.+\s+guilty\b',
+        r'\bdid\s+.+\s+(commit|do\s+it|kill|murder)\b',
+        r'\bwho\s+is\s+the\s+(killer|murderer|perpetrator|culprit)\b',
+        r'\bwho\s+is\s+at\s+fault\b',
+        r'\bwho\s+should\s+be\s+(arrested|charged|prosecuted|convicted)\b',
+        r'\bdetermine\s+(the\s+)?guilt\b',
+        r'\bestablish\s+(the\s+)?guilt\b',
+        r'\bprove\s+(the\s+)?guilt\b',
+        r'\bwho\s+do\s+you\s+think\s+(did|committed|killed|is\s+guilty)\b',
+        r'\bdo\s+you\s+think\s+.+\s+is\s+guilty\b',
+        r'\bshould\s+.+\s+be\s+(convicted|found\s+guilty)\b',
+        r'\bwhat\s+is\s+your\s+(verdict|judgment|conclusion)\s+on\s+guilt\b',
+        r'\bcan\s+you\s+(tell|say|determine)\s+who\s+(is\s+)?guilty\b',
+        r'\bwho\s+is\s+the\s+likely\s+(suspect|perpetrator|killer)\b',
+        r'\bwho\s+most\s+likely\s+(committed|did|killed)\b',
+    ]
+    
+    for pattern in guilt_patterns:
+        if re.search(pattern, question_lower):
+            return True
+    
+    # Catch simple variants
+    simple_guilt_phrases = [
+        "who is guilty",
+        "who's guilty",
+        "whos guilty",
+        "who did this",
+        "who is the killer",
+        "who is the murderer",
+        "who is the perpetrator",
+        "who is the culprit",
+        "is he guilty",
+        "is she guilty",
+        "are they guilty",
+        "guilty party",
+        "who to blame",
+        "who is to blame",
+        "who's to blame",
+    ]
+    
+    for phrase in simple_guilt_phrases:
+        if phrase in question_lower:
+            return True
+    
+    return False
+
+
+def get_guilt_deflection_response() -> str:
+    """
+    Return the standard deflection response for guilt-related queries.
+    """
+    return GUILT_DEFLECTION_RESPONSE
 
 
 def _synthesize_response(
@@ -81,7 +192,13 @@ INVESTIGATIVE OBJECTIVITY (CRITICAL):
 - DO NOT assign investigative roles (suspect, person of interest, perpetrator) based on your interpretation
 - If a document explicitly labels someone, quote the label and cite the source document
 - Present facts objectively without prejudging guilt, innocence, or involvement
-- Let the investigator draw their own conclusions about roles and culpability"""
+- Let the investigator draw their own conclusions about roles and culpability
+
+GUILT DETERMINATION - ABSOLUTE PROHIBITION:
+- If the question asks who is guilty, who committed the crime, who is the perpetrator, or any variant asking you to determine culpability, YOU MUST REFUSE
+- Do not analyze or discuss guilt even indirectly
+- Respond with: "I cannot determine guilt or culpability. I can help you find specific facts, statements, or evidence in the documents. Please rephrase your question."
+- This rule overrides all other instructions"""
 
     user_prompt = f"""User's Question: {question}
 

@@ -27,7 +27,7 @@ from src.extract import (
     remove_document_extraction, deduplicate_extracted_data,
     analyze_investigative_notes
 )
-from src.router import classify_query, answer_exhaustive_query, should_use_extracted_data
+from src.router import classify_query, answer_exhaustive_query, should_use_extracted_data, is_guilt_query, get_guilt_deflection_response
 from web.websocket import InvestigationWebSocketManager
 
 
@@ -324,6 +324,20 @@ async def handle_streaming_question(websocket: WebSocket, question: str, history
         return
     
     try:
+        # Check for guilt-related queries FIRST - before any processing
+        if is_guilt_query(question):
+            response = get_guilt_deflection_response()
+            await manager.send_stream_start(websocket)
+            
+            # Send deflection response in chunks for consistent UX
+            chunk_size = 50
+            for i in range(0, len(response), chunk_size):
+                await manager.send_chunk(websocket, response[i:i + chunk_size])
+                await asyncio.sleep(0.01)
+            
+            await manager.send_stream_end(websocket, question)
+            return
+        
         loop = asyncio.get_running_loop()
         
         # Load extracted data for entity-aware routing
@@ -450,6 +464,14 @@ async def ask_question(request: Dict[str, Any]):
         raise HTTPException(status_code=400, detail="No vector store found")
     
     try:
+        # Check for guilt-related queries FIRST
+        if is_guilt_query(question):
+            return {
+                "response": get_guilt_deflection_response(), 
+                "question": question, 
+                "query_type": "deflected"
+            }
+        
         loop = asyncio.get_running_loop()
         
         # Load extracted data for entity-aware routing

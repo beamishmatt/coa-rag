@@ -1,32 +1,27 @@
-# Investigative AI Prototype
+# Investigator
 
-A comprehensive investigative AI system that ingests documents into OpenAI Vector Store and uses a Chain-of-Agents pattern to generate detailed investigative reports with evidence analysis, timelines, and conflict detection.
+An investigative AI system that ingests evidence into a Vector Store and knowledge graph then uses a Chain-of-Agents pattern + query expansion to generate detailed investigative insights.
 
 ## Features
 
-### 🔍 **Investigative Analysis**
-- **Multi-Agent Analysis**: 4 parallel worker agents for comprehensive evidence extraction
-- **Structured Evidence Extraction**: JSON schemas ensure consistent data extraction
+###  **Investigative Analysis**
+- **Multi-Agent Analysis**: 4 parallel worker agents with query expansion to ensure we hit as much of the embedding space as possible
+- **Structured Evidence Extraction**: JSON schemas ensure consistent data extraction into a knowledge graph
 - **Conflict Detection**: Explicit handling of contradictions and uncertainties
 - **Source Attribution**: Maintains evidence traceability throughout analysis
 
-### 🌐 **ChatGPT-Style Web Interface**
-- **Modern UI**: Clean, responsive ChatGPT-inspired design
+###  **Chat Web Interface**
 - **Real-time Streaming**: Live responses with progress updates
 - **Document Management**: Drag-and-drop upload with processing status
 - **Conversation History**: Multi-turn investigations with full context
 - **Export Capabilities**: Download reports and conversation transcripts
 
-### 📚 **Document Processing**
+###  **Document Processing**
 - **Smart Ingestion**: Automatic PDF chunking and embedding via OpenAI
 - **OCR Support**: Automatic text extraction from scanned PDFs using Tesseract
 - **Vector Search**: Semantic + keyword search capabilities  
 - **Bulk Upload**: Process multiple documents simultaneously
 - **Status Tracking**: Real-time indexing progress monitoring
-
-### ⚡ **Dual Interface Options**
-- **Web Interface**: Interactive ChatGPT-style experience (recommended)
-- **Command-Line Scripts**: Automation-friendly workflow scripts
 
 ## Quick Start
 
@@ -78,7 +73,7 @@ Navigate to `http://localhost:8000`
 
 ## Usage
 
-### 🌐 Web Interface (Recommended)
+###  Web Interface (Recommended)
 
 1. **Upload Documents**
    - Drag and drop PDFs into the upload area
@@ -86,9 +81,9 @@ Navigate to `http://localhost:8000`
    - View document status in the sidebar
 
 2. **Start Investigation**
-   - Type questions in the ChatGPT-style chat interface
-   - Watch real-time progress as agents analyze evidence
-   - Review comprehensive reports with timelines and findings
+   - Type questions in the chat interface
+   - Watch real-time progress as agents analyze the embedding space
+   - Review and reason with findings
 
 3. **Export Results**
    - Download conversation transcripts

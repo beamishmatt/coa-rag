@@ -31,7 +31,8 @@ def _empty_extraction() -> dict:
         "investigative_notes": [],
         "conflicts": [],
         "documents": [],
-        "key_facts": []
+        "key_facts": [],
+        "benefit_indicators": []
     }
 
 
@@ -66,6 +67,9 @@ Return ONLY valid JSON with this exact structure:
     ],
     "key_facts": [
         "important factual statements from the document"
+    ],
+    "benefit_indicators": [
+        {"person": "name of person who might benefit", "victim": "name of victim/deceased if applicable", "type": "financial|practical|emotional", "subtype": "insurance_beneficiary|inheritance|debt_relief|control_gain|obstacle_removed|secret_protected|jealousy|revenge|relationship_conflict", "description": "what benefit they might gain", "quote": "supporting evidence from document"}
     ]
 }
 
@@ -103,6 +107,27 @@ Rules:
 - For events, capture anything with a temporal or sequential nature
 - For relationships, extract ANY connection between people mentioned - even indirect ones
 - Be thorough - this extraction will be used to answer comprehensive queries later
+
+BENEFIT INDICATORS - Extract any evidence of who might benefit from the incident:
+- FINANCIAL benefits: Insurance beneficiaries, inheritance, debts owed TO the victim (cleared by death), shared assets, business ownership changes
+- PRACTICAL benefits: Obstacles removed (someone blocking their goals), control/power gained, secrets protected (victim knew something damaging)
+- EMOTIONAL benefits: Jealousy (romantic rivals), revenge (prior conflict/grievance), relationship conflict resolution (custody, divorce disputes)
+
+For each benefit indicator:
+- "type" = financial, practical, or emotional
+- "subtype" = specific category (insurance_beneficiary, inheritance, debt_relief, control_gain, obstacle_removed, secret_protected, jealousy, revenge, relationship_conflict)
+- MUST include supporting quote from the document
+- Be objective: extract documented facts, not speculative connections
+- Only extract if there is actual textual evidence in the document
+
+KEY_FACTS TEMPORAL CLARITY - CRITICAL:
+When writing key_facts involving timing or sequence, use UNAMBIGUOUS phrasing:
+- Write facts with the SUBJECT FIRST and explicit temporal markers
+- WRONG: "X was killed after Y saw her" (ambiguous - can be misread as "Y saw X after X was killed")
+- RIGHT: "Y's last contact with X occurred before X's death" (unambiguous)
+- For deceased persons: ALWAYS phrase as "[Person]'s interaction with [victim] occurred before [victim]'s death"
+- Never write temporal facts that could be misread if subject/object are mentally swapped
+- Use "before [person]'s death" rather than "after [person] saw them" to avoid inversion errors
 
 ENTITY LABELING - CRITICAL FOR PERSONS:
 - NEVER describe someone as "Suspect" or "Suspect in the case" as your own classification
@@ -164,6 +189,8 @@ DOCUMENT:
         for i, fact in enumerate(extracted.get("key_facts", [])):
             if isinstance(fact, str):
                 extracted["key_facts"][i] = {"fact": fact, "source": doc_name}
+        for item in extracted.get("benefit_indicators", []):
+            item["source"] = doc_name
         
         return extracted
         
@@ -389,6 +416,9 @@ def merge_extraction(all_data: dict, new_extraction: dict, doc_name: str) -> dic
     
     # Merge key facts
     all_data.setdefault("key_facts", []).extend(new_extraction.get("key_facts", []))
+    
+    # Merge benefit indicators
+    all_data.setdefault("benefit_indicators", []).extend(new_extraction.get("benefit_indicators", []))
     
     # Validate event dates against known death dates
     all_data = validate_event_dates(all_data)
@@ -750,12 +780,33 @@ Be extremely conservative - false positives waste investigator time.
         
         llm_conflicts = json.loads(response_text)
         
-        # Enrich with actual claim data
+        # Enrich with actual claim data and validate
         enriched = []
         for conflict in llm_conflicts:
             indices = conflict.get("claim_indices", [])
             conflict["claims"] = [claims_sample[i] for i in indices if i < len(claims_sample)]
             conflict["sources"] = list(set(c.get("source", "") for c in conflict["claims"]))
+            
+            # VALIDATION: For inconsistencies, both claims must be about the same person
+            # Different people can't be "inconsistent" with each other - they're just different accounts
+            if conflict.get("type") == "inconsistency" and len(conflict["claims"]) >= 2:
+                subjects = [c.get("subject", "").lower().strip() for c in conflict["claims"]]
+                # Normalize names - check if they refer to the same person
+                # (e.g., "Dennis" and "Dennis Rosa Roman" should match)
+                subject_words = [set(s.split()) for s in subjects]
+                
+                # Check if subjects share any significant words (name parts)
+                if len(subject_words) >= 2:
+                    common_words = subject_words[0] & subject_words[1]
+                    # Filter out common non-name words
+                    non_name_words = {"the", "a", "an", "unknown", "person", "subject"}
+                    meaningful_common = common_words - non_name_words
+                    
+                    if not meaningful_common:
+                        # Different people - skip this false positive
+                        print(f"Rejecting false positive: '{subjects[0]}' vs '{subjects[1]}' are different people")
+                        continue
+            
             enriched.append(conflict)
         
         return enriched
@@ -913,6 +964,10 @@ def remove_document_extraction(doc_name: str) -> dict:
     all_data["key_facts"] = [f for f in all_data.get("key_facts", []) 
                             if isinstance(f, dict) and not source_matches(f.get("source"), doc_name)]
     
+    # Filter out benefit indicators from this document
+    all_data["benefit_indicators"] = [b for b in all_data.get("benefit_indicators", []) 
+                                      if not source_matches(b.get("source"), doc_name)]
+    
     # Clear conflicts and investigative notes (will be recalculated)
     all_data["conflicts"] = []
     all_data["investigative_notes"] = []
@@ -934,6 +989,7 @@ def get_extraction_summary(all_data: dict = None) -> dict:
         "relationships": len(all_data.get("relationships", [])),
         "investigative_notes": len(all_data.get("investigative_notes", [])),
         "conflicts": len(all_data.get("conflicts", [])),
-        "key_facts": len(all_data.get("key_facts", []))
+        "key_facts": len(all_data.get("key_facts", [])),
+        "benefit_indicators": len(all_data.get("benefit_indicators", []))
     }
 

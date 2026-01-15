@@ -6,12 +6,189 @@ Routing strategy:
 - VECTOR: Deep analysis, complex reasoning, multi-hop questions - use CoA + file_search
 - HYBRID: Start with graph, augment with vector if needed (future)
 - DEFLECT: Guilt/culpability determinations - gracefully decline to answer
+- MOTIVE: Financial/benefit queries - answer factually with anti-inference framing
 """
 
 import re
 from typing import Tuple, Optional, List
 from openai import OpenAI
 from .extract import load_extracted, get_extraction_summary
+
+
+# ============================================================================
+# MOTIVE/BENEFIT QUERY DETECTION AND FRAMING
+# ============================================================================
+
+# Patterns for queries asking about who benefits/gains from the crime
+MOTIVE_QUERY_PATTERNS = [
+    r'\bwho\s+benefit',
+    r'\bwho\s+gains?\b',
+    r'\bcui\s+bono\b',
+    r'\bwho\s+profits?\b',
+    r'\bwho\s+had\s+(?:a\s+)?motive',
+    r'\bwho\s+stood\s+to\s+gain\b',
+    r'\bwho\s+stands?\s+to\s+gain\b',
+    r'\bwho\s+would\s+benefit\b',
+    r'\bwho\s+benefits?\s+from\b',
+    r'\bwho\s+gained\s+from\b',
+    r'\bmotive\s+(?:for|behind)\b',
+    r'\bfinancial\s+motive\b',
+    r'\bbeneficiary\b.*\b(?:who|list)\b',
+    r'\bwho\s+inherits?\b',
+    r'\bwho\s+gets?\s+(?:the\s+)?(?:money|insurance|estate|inheritance)\b',
+]
+
+MOTIVE_DISCLAIMER = """
+---
+
+⚠️ **Important Note for Investigators**
+
+The financial relationships listed above are **documented facts from the case files**, not conclusions about guilt or involvement. Having a potential financial interest:
+
+- Does NOT indicate guilt or culpability
+- Does NOT establish motive on its own
+- Must be evaluated alongside all other evidence
+- Should be corroborated through independent investigation
+
+This system reports what the documents contain — conclusions are yours to draw as the investigator.
+"""
+
+
+def is_motive_query(question: str) -> bool:
+    """
+    Detect if a question is asking about who benefits, gains, or has motive.
+    These queries are answered factually with documented financial relationships.
+    
+    Args:
+        question: The user's question
+        
+    Returns:
+        True if the query is asking about benefit/motive
+    """
+    question_lower = question.lower().strip()
+    
+    for pattern in MOTIVE_QUERY_PATTERNS:
+        if re.search(pattern, question_lower):
+            return True
+    
+    return False
+
+
+def identify_victim(data: dict) -> Optional[dict]:
+    """
+    Identify the victim/deceased person from extracted entities.
+    
+    Looks for entities marked as deceased, victim, killed, murdered, etc.
+    Returns the entity dict if found, None otherwise.
+    """
+    entities = data.get("entities", [])
+    
+    # Keywords that indicate victim/deceased status
+    victim_keywords = [
+        "victim", "deceased", "killed", "murdered", "dead", "death",
+        "homicide", "found dead", "body found", "body discovered"
+    ]
+    
+    candidates = []
+    
+    for entity in entities:
+        if entity.get("type", "").lower() != "person":
+            continue
+            
+        description = entity.get("description", "").lower()
+        mentions = " ".join(str(m).lower() for m in entity.get("mentions", []))
+        
+        # Check if this entity is marked as victim/deceased
+        for keyword in victim_keywords:
+            if keyword in description or keyword in mentions:
+                candidates.append(entity)
+                break
+    
+    # If we found candidates, return the one with most evidence
+    if candidates:
+        # Prefer the one with "victim" in description
+        for c in candidates:
+            if "victim" in c.get("description", "").lower():
+                return c
+        return candidates[0]
+    
+    # Fallback: Look for death events and find the person involved
+    events = data.get("events", [])
+    for event in events:
+        desc = event.get("description", "").lower()
+        if any(kw in desc for kw in ["killed", "murdered", "death", "died", "found dead", "body"]):
+            people = event.get("people_involved", [])
+            if people:
+                # Find the entity for this person
+                for person_name in people:
+                    for entity in entities:
+                        if entity.get("type", "").lower() == "person":
+                            if _normalize_for_matching(person_name) in _normalize_for_matching(entity.get("name", "")):
+                                return entity
+    
+    return None
+
+
+def get_people_connected_to_victim(data: dict, victim_name: str) -> List[dict]:
+    """
+    Get all people who have a documented relationship with the victim.
+    
+    Returns list of dicts with person info and their relationship to victim.
+    """
+    relationships = data.get("relationships", [])
+    entities = data.get("entities", [])
+    claims = data.get("claims", [])
+    
+    victim_normalized = _normalize_for_matching(victim_name)
+    victim_words = set(victim_normalized.split())
+    
+    connected_people = {}
+    
+    # Find relationships involving the victim
+    for rel in relationships:
+        p1 = rel.get("person1", "")
+        p2 = rel.get("person2", "")
+        p1_norm = _normalize_for_matching(p1)
+        p2_norm = _normalize_for_matching(p2)
+        
+        other_person = None
+        
+        # Check if victim is person1 or person2
+        if victim_normalized in p1_norm or any(w in p1_norm.split() for w in victim_words):
+            other_person = p2
+        elif victim_normalized in p2_norm or any(w in p2_norm.split() for w in victim_words):
+            other_person = p1
+        
+        if other_person:
+            other_norm = _normalize_for_matching(other_person)
+            if other_norm not in connected_people:
+                connected_people[other_norm] = {
+                    "name": other_person,
+                    "relationships": [],
+                    "claims": [],
+                    "entity_info": None
+                }
+            connected_people[other_norm]["relationships"].append(rel)
+    
+    # Find entity info for connected people
+    for person_key in connected_people:
+        for entity in entities:
+            if entity.get("type", "").lower() == "person":
+                entity_norm = _normalize_for_matching(entity.get("name", ""))
+                if person_key in entity_norm or entity_norm in person_key:
+                    connected_people[person_key]["entity_info"] = entity
+                    break
+    
+    # Find claims about connected people
+    for claim in claims:
+        subject = claim.get("subject", "")
+        subject_norm = _normalize_for_matching(subject)
+        
+        for person_key in connected_people:
+            if person_key in subject_norm or subject_norm in person_key:
+                connected_people[person_key]["claims"].append(claim)
+    
+    return list(connected_people.values())
 
 
 # ============================================================================
@@ -145,7 +322,151 @@ def _synthesize_response(
         Synthesized natural language response
     """
     
-    system_prompt = """You are an investigative analyst assistant. Your job is to take structured extracted data and synthesize it into a clear, professional response that directly answers the user's question.
+    # Use comprehensive benefit analysis framing for motive queries
+    if category == "motive":
+        system_prompt = """You are an investigative analyst presenting a comprehensive benefit analysis based on documented evidence. Your role is to systematically analyze who might have benefited from the victim's death across THREE categories, while maintaining objectivity.
+
+ANALYSIS STRUCTURE (use this exact format):
+
+## Benefit Analysis for [Victim Name]
+
+### Financial Benefit
+Analyze documented evidence of who might gain financially:
+- Insurance beneficiaries
+- Inheritance/estate beneficiaries  
+- People who owed money TO the victim (debts cleared by death)
+- Business partners who gain control/assets
+
+For each person with potential financial benefit:
+- State the documented relationship
+- Quote the supporting evidence
+- Note the source
+
+If no financial benefit evidence: Say "No documented financial beneficiaries or debt relationships found."
+
+### Practical Benefit
+Analyze documented evidence of who might gain practically:
+- People the victim had conflicts with (obstacle removed)
+- People who might gain power/control
+- People whose secrets the victim knew (secrets protected)
+- Witnesses to something the victim knew about
+
+For each person with potential practical benefit:
+- State the documented conflict or situation
+- Quote the supporting evidence
+- Note the source
+
+If no practical benefit evidence: Say "No documented conflicts or strategic relationships found."
+
+### Emotional/Relational Benefit
+Analyze documented evidence of emotional dynamics:
+- Romantic jealousy (love triangles, affairs)
+- Revenge for prior grievances
+- Custody/divorce disputes
+- Long-standing personal conflicts
+
+For each person with potential emotional benefit:
+- State the documented relationship dynamic
+- Quote the supporting evidence (statements about anger, jealousy, conflicts)
+- Note the source
+
+If no emotional benefit evidence: Say "No documented emotional conflicts found."
+
+CRITICAL RULES:
+
+1. **Evidence-Based Only:** Every benefit claim MUST cite a specific quote or document
+2. **No Speculation:** Only include benefits supported by documentary evidence
+3. **Objective Framing:** 
+   - SAY: "Documents show X and victim had a romantic conflict..."
+   - NOT: "X was jealous and had motive..."
+4. **Present All Connected People:** Even if their benefit is unclear, note their documented relationship to the victim
+5. **Note Gaps:** If a category has no evidence, explicitly state this - it's useful information
+
+The disclaimer at the end is pre-included - do not add another one.
+
+Remember: Your analysis helps investigators see the full picture of relationships. Present facts systematically without drawing conclusions about guilt."""
+
+    # Use formal law enforcement narrative style for case summaries
+    elif category == "summary":
+        system_prompt = """You are a law enforcement analyst preparing a case briefing. Write in formal narrative prose suitable for professional investigative review.
+
+WRITING STYLE:
+- Write in flowing prose paragraphs, not bullet lists
+- Use direct, declarative sentences
+- Maintain a clinical, objective tone throughout
+- Use police report-style phrasing ("On [date], the body of [victim] was discovered...", "The victim was identified as...")
+- Attribute all statements formally ("According to [witness]...", "[Person] stated during interview that...")
+
+STRUCTURE YOUR BRIEFING:
+1. **Incident Summary** - Date, location, victim identification, nature of incident
+2. **Victim Background** - Known information about the victim prior to the incident
+3. **Sequence of Events** - Chronological reconstruction based on witness accounts and evidence
+4. **Witness Accounts** - Summary of statements from interviewed individuals
+5. **Physical Evidence** - Evidence collected and forensic findings
+6. **Outstanding Issues** - Unresolved questions, conflicting accounts, investigative gaps
+
+Use ## for section headers. Within sections, write prose paragraphs.
+
+PROHIBITED LANGUAGE - DO NOT USE:
+- Dramatic openers ("tragedy struck", "tranquility shattered", "harrowing incident", "brutal")
+- Editorializing adjectives ("compelling", "intriguing", "suspicious", "notable")
+- Magazine-style phrases ("raises questions", "adds complexity", "web of connections", "murky timeline")
+- Narrative tension language ("interestingly", "notably", "curiously", "significantly")
+- Speculative phrasing ("may have", "could suggest", "might indicate", "begs the question")
+- Emotional language ("fateful day", "untimely demise", "grim discovery", "demise")
+- META-COMMENTARY about the system or extraction process - NEVER mention:
+  - "identified X entities", "extracted Y claims", "documented Z events"
+  - "significant progress has been made", "the investigation has identified"
+  - Any reference to internal data counts, extraction, or system processes
+- VAGUE INVESTIGATIVE SUGGESTIONS like:
+  - "need to clarify relationships", "ascertain additional evidence"
+  - "requires further investigation", "warrants additional scrutiny"
+  - Present facts only - do not tell investigators what to do next
+
+CORRECT STYLE EXAMPLES:
+- WRONG: "The tranquility of Chicopee was shattered by the brutal homicide..."
+- RIGHT: "On August 26, 2011, the body of Amanda Lynn Plasse, age 20, was discovered in Chicopee."
+
+- WRONG: "This raises intriguing questions about his involvement..."
+- RIGHT: "Seth Green's fingerprints were recovered from the crime scene. Green stated he was working at a job site on the day of the incident."
+
+- WRONG: "The investigation took a critical turn when forensic evidence emerged..."
+- RIGHT: "Crime scene analysis yielded fingerprint evidence. Fingerprints matching Seth Green were identified at the scene."
+
+ATTRIBUTION REQUIREMENTS:
+- State what each person said, not what happened: "[Person] stated..." not "[Person] was..."
+- Distinguish between verified facts and claims made by individuals
+- When accounts conflict, present both versions with their sources
+
+ANTI-HALLUCINATION RULES:
+- Include ONLY facts from the extracted data
+- Never invent or embellish details
+- If information is not in the data, do not include it
+
+INVESTIGATIVE OBJECTIVITY:
+- NEVER label anyone as a "suspect" unless documents explicitly use that term
+- Use neutral language: "interviewed individual", "person of interest" only if documented
+- Present facts without prejudging guilt, innocence, or involvement
+- Do not draw conclusions about culpability
+
+LOGICAL CONSISTENCY:
+- Never combine contradictory facts into a single statement
+- If person X discovered the body, X cannot be "the last to see them alive"
+- Present conflicting accounts separately with attribution
+
+TEMPORAL RELATIONSHIP RULES - CRITICAL:
+- NEVER invert "before" and "after" relationships when rewriting facts
+- If the data says "X happened after Y saw them" → write "Y saw them before X happened"
+- If someone is deceased, any past interaction MUST be stated as "before their death"
+- Verify temporal logic before writing: Can this sequence actually happen in this order?
+- A living person cannot see/interact with a dead person (unless discovering the body)
+- WRONG: "Dennis last saw Amanda after she had been killed" (impossible)
+- RIGHT: "Dennis's last contact with Amanda occurred before her death"
+- When uncertain about temporal ordering, keep facts separate rather than combining them"""
+
+    else:
+        # Use structured bullet-point format for all other query types
+        system_prompt = """You are an investigative analyst assistant. Your job is to take structured extracted data and synthesize it into a clear, professional response that directly answers the user's question.
 
 MARKDOWN FORMATTING RULES (CRITICAL):
 - Use ## for main section headers (with blank line after)
@@ -171,6 +492,19 @@ CONTENT GUIDELINES:
 - Be concise but thorough - don't pad with unnecessary text
 - If the data doesn't fully answer the question, acknowledge limitations
 
+DO NOT INCLUDE (unless specifically asked for a case summary):
+- NO "Incident Overview" section
+- NO "Key Individuals" section
+- NO general case background or victim information unless directly relevant to the specific question
+- Answer ONLY what was asked - do not pad with case summary information
+
+EXACT QUOTES ARE MANDATORY:
+- When the extracted data contains direct quotes (text in > blockquotes), you MUST include them
+- NEVER paraphrase or summarize quotes - preserve the exact wording
+- Format quotes using > blockquote syntax
+- Always attribute quotes to their source document
+- Quotes are critical evidence - do not drop them from your response
+
 REASONING REQUIREMENTS:
 - After presenting findings, include a brief "Reasoning" section
 - Explain HOW you arrived at your conclusions based on the evidence
@@ -194,11 +528,60 @@ INVESTIGATIVE OBJECTIVITY (CRITICAL):
 - Present facts objectively without prejudging guilt, innocence, or involvement
 - Let the investigator draw their own conclusions about roles and culpability
 
-GUILT DETERMINATION - ABSOLUTE PROHIBITION:
-- If the question asks who is guilty, who committed the crime, who is the perpetrator, or any variant asking you to determine culpability, YOU MUST REFUSE
-- Do not analyze or discuss guilt even indirectly
-- Respond with: "I cannot determine guilt or culpability. I can help you find specific facts, statements, or evidence in the documents. Please rephrase your question."
-- This rule overrides all other instructions"""
+PROHIBITED META-COMMENTARY:
+- NEVER mention internal system processes: "identified X entities", "extracted Y claims", "documented Z events"
+- NEVER use progress language: "significant progress has been made", "the investigation has identified"
+- NEVER give vague investigative suggestions: "need to clarify relationships", "ascertain additional evidence", "requires further investigation", "warrants additional scrutiny"
+- Do NOT use euphemisms like "demise" - use direct language like "death" or "killed"
+- Present facts from documents only - do not tell investigators what to do next
+
+GUILT DETERMINATION - WHEN TO REFUSE:
+- ONLY refuse if the question explicitly asks you to determine culpability: "who is guilty", "who did it", "who committed the crime", "who is the perpetrator/killer"
+- If you must refuse, respond with: "I cannot determine guilt or culpability. I can help you find specific facts, statements, or evidence in the documents. Please rephrase your question."
+
+IMPORTANT - These are NOT guilt determination queries (ANSWER NORMALLY):
+- "Who was the last person to see [person] alive" → Factual timeline question - ANSWER IT
+- "Who found the body" → Factual question - ANSWER IT
+- "Who was with [person] on [date]" → Factual question - ANSWER IT
+- "Who had access to [location]" → Factual question - ANSWER IT
+- Questions about who saw whom, when, and where are FACTUAL questions that MUST be answered
+
+LOGICAL CONSISTENCY - CRITICAL:
+- NEVER combine statements that create logical impossibilities
+- Before merging facts into a single sentence, verify they can logically coexist:
+  - If person X "found the body" or "found them dead" → X was NOT "the last to see them alive"
+  - If event A happened "before" event B → A cannot also happen "after" B  
+  - If someone was "alive" at time T → they cannot be "dead" at time T
+  - "Discovered the body" and "last person to see them alive" are MUTUALLY EXCLUSIVE
+- When facts seem contradictory or incompatible, present them SEPARATELY with their sources
+- Say: "According to Source A, X happened. According to Source B, Y happened." — do NOT merge into one statement
+- If unsure whether facts are compatible, keep them separate rather than combining them
+- NEVER write sentences that contain internal contradictions
+
+TEMPORAL RELATIONSHIP RULES - CRITICAL:
+- NEVER invert "before" and "after" relationships when rewriting facts
+- If the data says "X happened after Y saw them" → write "Y saw them before X happened"
+- If someone is deceased, any past interaction MUST be stated as "before their death"
+- Verify temporal logic before writing: Can this sequence actually happen in this order?
+- A living person cannot see/interact with a dead person (unless discovering the body)
+- WRONG: "Dennis last saw Amanda after she had been killed" (impossible)
+- RIGHT: "Dennis's last contact with Amanda occurred before her death"
+- When uncertain about temporal ordering, keep facts separate rather than combining them
+
+QUESTION-FOCUSED RESPONSE (CRITICAL):
+- Read the user's question carefully and identify EXACTLY what they are asking
+- Answer the SPECIFIC question in your FIRST SENTENCE - do not start with headers or overviews
+- Do NOT give a general overview when a specific answer exists in the data
+- Common question patterns and how to answer them:
+  - "Who was the last person to see X alive" → FIRST SENTENCE: "[Name] was the last person documented to see/speak with X at [time]."
+  - "Who was X with" → FIRST SENTENCE: "According to [source], X was with [names] at [time/place]."
+  - "What did X say about Y" → FIRST SENTENCE: "[X] stated: '[quote]' (Source: [doc])"
+  - "When did X happen" → FIRST SENTENCE: "[Event] occurred at [time/date] according to [source]."
+  - "Where was X" → FIRST SENTENCE: "[Person] stated they were at [location]. (Source: [doc])"
+  - "Who found the body" → FIRST SENTENCE: "[Name] found/discovered the body according to [source]."
+- If the extracted data contains a direct answer to the question, lead with that answer
+- Only include tangential information AFTER directly answering what was asked
+- NEVER start with "Incident Overview", "Key Individuals", "Timeline" headers for specific questions"""
 
     user_prompt = f"""User's Question: {question}
 
@@ -236,6 +619,23 @@ def _extract_potential_names(question: str) -> List[str]:
     """
     names = []
     
+    # Common words that appear capitalized at sentence start but are NOT names
+    non_name_words = {
+        # Question words
+        "what", "who", "where", "when", "why", "how", "which",
+        # Command/action words often at start of queries
+        "extract", "show", "list", "find", "get", "tell", "give", "display",
+        "search", "look", "describe", "explain", "summarize", "identify",
+        # Articles and common words
+        "the", "a", "an", "all", "any", "some", "this", "that", "these", "those",
+        # Verbs commonly starting sentences
+        "is", "are", "was", "were", "do", "does", "did", "can", "could", "would",
+        "should", "has", "have", "had",
+        # Other common non-names
+        "yes", "no", "please", "thanks", "okay", "evidence", "documents",
+        "case", "information", "details", "facts", "names", "people", "person"
+    }
+    
     # Extract quoted strings
     quoted = re.findall(r'["\']([^"\']+)["\']', question)
     names.extend(quoted)
@@ -243,7 +643,11 @@ def _extract_potential_names(question: str) -> List[str]:
     # Extract capitalized word sequences (proper nouns)
     # Match sequences like "John Smith", "Detective Roman", "Amanda Lynn Plasse"
     capitalized = re.findall(r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b', question)
-    names.extend(capitalized)
+    
+    # Filter out common non-name words
+    for word in capitalized:
+        if word.lower() not in non_name_words:
+            names.append(word)
     
     return names
 
@@ -333,7 +737,9 @@ def _is_comprehensive_query(question: str) -> bool:
         "all ", "every ", "list ", "find all", "show all", "give me all",
         "inconsistencies", "contradictions", "conflicts", "discrepancies",
         "everyone", "everything", "everybody",
-        "summarize all", "summary of all", "summarize the",
+        # Summary queries - all variations should hit knowledge graph
+        "summarize", "summary", "case summary", "give me a summary",
+        "brief the case", "brief me", "case brief", "case overview",
         "how many", "count ",
         "complete list", "full list",
         "all people", "all entities", "all events",
@@ -405,16 +811,21 @@ def classify_query(question: str, extracted_data: dict = None) -> str:
         "SPECIFIC" - Use vector search with CoA
     
     Routing logic:
-    1. Comprehensive/list queries → EXHAUSTIVE (knowledge graph)
-    2. Entity lookup queries → Check if entity exists in graph
+    1. Motive/benefit queries → EXHAUSTIVE (search extracted financial relationships)
+    2. Comprehensive/list queries → EXHAUSTIVE (knowledge graph)
+    3. Entity lookup queries → Check if entity exists in graph
        - Entity found → EXHAUSTIVE
        - Entity not found → SPECIFIC (search documents)
-    3. Deep analysis queries → SPECIFIC (need document context)
-    4. Default → SPECIFIC (CoA handles uncertainty well)
+    4. Deep analysis queries → SPECIFIC (need document context)
+    5. Default → SPECIFIC (CoA handles uncertainty well)
     """
     question_lower = question.lower().strip()
     
-    # 1. Comprehensive queries always go to knowledge graph
+    # 1. Motive/benefit queries go to knowledge graph (financial relationships)
+    if is_motive_query(question):
+        return "EXHAUSTIVE"
+    
+    # 2. Comprehensive queries always go to knowledge graph
     if _is_comprehensive_query(question):
         return "EXHAUSTIVE"
     
@@ -458,9 +869,13 @@ def get_query_category(question: str, extracted_data: dict = None) -> str:
     """
     Get more detailed category for exhaustive queries to determine response type.
     
-    Returns: "conflicts", "entities", "events", "relationships", "investigative_notes", "summary", or "general"
+    Returns: "conflicts", "entities", "events", "relationships", "investigative_notes", "motive", "summary", or "general"
     """
     question_lower = question.lower()
+    
+    # Check for motive/benefit queries FIRST (before other patterns)
+    if is_motive_query(question):
+        return "motive"
     
     if any(kw in question_lower for kw in ["inconsisten", "contradict", "conflict", "discrepan"]):
         return "conflicts"
@@ -554,6 +969,8 @@ def answer_exhaustive_query(
         raw_response, success = _answer_relationships_query(question, extracted_data)
     elif category == "investigative_notes":
         raw_response, success = _answer_investigative_notes_query(question, extracted_data)
+    elif category == "motive":
+        raw_response, success = _answer_motive_query(question, extracted_data)
     elif category == "summary":
         raw_response, success = _answer_summary_query(extracted_data)
     else:
@@ -651,37 +1068,27 @@ def _answer_conflicts_query(data: dict) -> Tuple[str, bool]:
             if conflict.get("investigative_note"):
                 response += f"**Why it matters:** {conflict['investigative_note']}\n\n"
             
-            # Show source evidence
-            response += "**Sources:**\n\n"
+            # Show source evidence with quotes
+            response += "**Source Evidence:**\n\n"
             for claim in conflict.get("claims", []):
                 source = claim.get("source", "Unknown source")
                 claim_text = claim.get("claim", "No claim text")
+                quote = claim.get("quote", "")
+                
                 response += f"- *{source}*: {claim_text}\n"
-            response += "\n---\n\n"
+                if quote:
+                    quote_text = quote if isinstance(quote, str) else (quote[0] if quote else "")
+                    if quote_text:
+                        response += f"  > \"{str(quote_text)[:200]}{'...' if len(str(quote_text)) > 200 else ''}\"\n"
+                response += "\n"
+            response += "---\n\n"
     
     if not high_severity and not medium_severity:
         response += "_No contradictions or notable inconsistencies found in the statements._\n\n"
     
-    # Show cross-document claims (for investigator awareness)
-    if cross_doc_claims:
-        response += f"### 📄 Cross-Document References ({len(cross_doc_claims)})\n\n"
-        response += "_The same subject is discussed in multiple documents. Review for consistency:_\n\n"
-        
-        for i, conflict in enumerate(cross_doc_claims, 1):
-            subject = conflict.get('subject', 'Unknown Subject').title()
-            sources = conflict.get('sources', [])
-            
-            response += f"**{i}. {subject}** — mentioned in: {', '.join(sources)}\n\n"
-            
-            for claim in conflict.get("claims", [])[:3]:  # Limit to 3 claims
-                claim_text = claim.get("claim", "")
-                source = claim.get("source", "")
-                response += f"- *{source}*: {claim_text}\n"
-            
-            if len(conflict.get("claims", [])) > 3:
-                response += f"- _...and {len(conflict['claims']) - 3} more claims_\n"
-            
-            response += "\n"
+    # Note: cross_doc_claims are filtered out but NOT displayed here
+    # Being mentioned in multiple documents is not a contradiction - it's expected
+    # Actual contradictions ACROSS documents are caught by high_severity/medium_severity
     
     # Show any other issues
     if other_issues:
@@ -757,25 +1164,22 @@ def _answer_entities_query(question: str, data: dict) -> Tuple[str, bool]:
     
     response += f"Found **{len(unique_entities)}** unique {entity_type.lower()}:\n\n"
     
-    for entity in unique_entities:
+    # Clean numbered list format
+    for idx, entity in enumerate(unique_entities, 1):
         name = entity.get("name", "Unknown")
-        desc = entity.get("description", "")
+        desc = entity.get("description", "").replace("\n", " ").strip()
         source = entity.get("source", "Unknown source")
-        entity_type_str = entity.get("type", "")
-        
-        response += f"### {name}"
-        if entity_type_str and entity_type_str.lower() != entity_type.lower().rstrip('s'):
-            response += f" ({entity_type_str})"
-        response += "\n\n"
-        
-        if desc:
-            response += f"{desc}\n\n"
         
         # Format source
         if isinstance(source, list):
-            response += f"*Sources: {', '.join(source)}*\n\n"
+            source_str = ", ".join(source)
         else:
-            response += f"*Source: {source}*\n\n"
+            source_str = source
+        
+        response += f"{idx}. **{name}**"
+        if desc:
+            response += f" — {desc}"
+        response += f"\n   *Source: {source_str}*\n\n"
     
     return (response, True)
 
@@ -868,6 +1272,33 @@ def _answer_specific_entity_query(
                 event_source = event.get("source", "Unknown")
                 
                 response += f"**{date}**\n\n{event_desc}\n\n*Source: {event_source}*\n\n---\n\n"
+        
+        # Find related relationships (who they were with, connections)
+        relationships = data.get("relationships", [])
+        related_relationships = []
+        for rel in relationships:
+            p1 = rel.get("person1", "").lower()
+            p2 = rel.get("person2", "").lower()
+            if entity_name_lower in p1 or entity_name_lower in p2 or \
+               any(word in p1 or word in p2 for word in entity_words):
+                related_relationships.append(rel)
+        
+        if related_relationships:
+            response += "### Relationships\n\n"
+            for rel in related_relationships[:10]:  # Limit to 10
+                p1 = rel.get("person1", "")
+                p2 = rel.get("person2", "")
+                rel_type = rel.get("type", "")
+                rel_desc = rel.get("description", "")
+                quote = rel.get("quote", "")
+                source = rel.get("source", "")
+                
+                response += f"**{p1}** — {rel_type} — **{p2}**\n\n"
+                if rel_desc:
+                    response += f"{rel_desc}\n\n"
+                if quote:
+                    response += f"> \"{quote}\"\n\n"
+                response += f"*Source: {source}*\n\n---\n\n"
     
     if not response:
         return ("No information found for the specified entity.", False)
@@ -1166,6 +1597,206 @@ def _answer_investigative_notes_query(question: str, data: dict) -> Tuple[str, b
                 response += f"**Follow-up question:** {follow_up}\n\n"
             
             response += "---\n\n"
+    
+    return (response, True)
+
+
+def _answer_motive_query(question: str, data: dict) -> Tuple[str, bool]:
+    """
+    Generate response for motive/benefit queries using LLM analysis.
+    
+    Identifies the victim, gathers all connected people and their relationships,
+    then uses LLM to analyze potential benefits (financial, practical, emotional).
+    """
+    import json
+    
+    # First, identify the victim
+    victim = identify_victim(data)
+    
+    if not victim:
+        return (
+            "## Unable to Identify Victim\n\n"
+            "Could not identify the victim/deceased person in the uploaded documents. "
+            "This analysis requires knowing who the victim is to identify who might benefit from the crime.\n\n"
+            "Please ensure documents containing victim information have been uploaded.",
+            False
+        )
+    
+    victim_name = victim.get("name", "Unknown")
+    victim_desc = victim.get("description", "")
+    
+    # Get all people connected to the victim
+    connected_people = get_people_connected_to_victim(data, victim_name)
+    
+    # Also check for pre-extracted benefit indicators
+    benefit_indicators = data.get("benefit_indicators", [])
+    
+    # Build context for LLM analysis
+    relationships = data.get("relationships", [])
+    claims = data.get("claims", [])
+    events = data.get("events", [])
+    
+    # Build the raw data response that will be sent to synthesis
+    response = f"## Benefit Analysis\n\n"
+    response += f"**Victim:** {victim_name}\n"
+    if victim_desc:
+        response += f"**Background:** {victim_desc}\n"
+    response += "\n---\n\n"
+    
+    # Include pre-extracted benefit indicators if available
+    if benefit_indicators:
+        response += "### Pre-Extracted Benefit Indicators\n\n"
+        for indicator in benefit_indicators:
+            person = indicator.get("person", "Unknown")
+            benefit_type = indicator.get("type", "unknown")
+            subtype = indicator.get("subtype", "")
+            description = indicator.get("description", "")
+            quote = indicator.get("quote", "")
+            source = indicator.get("source", "Unknown")
+            
+            response += f"**{person}** ({benefit_type}"
+            if subtype:
+                response += f" - {subtype.replace('_', ' ')}"
+            response += ")\n\n"
+            if description:
+                response += f"{description}\n\n"
+            if quote:
+                response += f"> \"{quote[:300]}{'...' if len(quote) > 300 else ''}\"\n\n"
+            response += f"*Source: {source}*\n\n---\n\n"
+    
+    # Include connected people for analysis
+    if connected_people:
+        response += "### People Connected to Victim\n\n"
+        response += "_The following individuals have documented relationships with the victim:_\n\n"
+        
+        for person_data in connected_people:
+            name = person_data.get("name", "Unknown")
+            entity_info = person_data.get("entity_info", {})
+            person_relationships = person_data.get("relationships", [])
+            person_claims = person_data.get("claims", [])
+            
+            response += f"#### {name}\n\n"
+            
+            if entity_info:
+                desc = entity_info.get("description", "")
+                if desc:
+                    response += f"**Description:** {desc}\n\n"
+            
+            # Document their relationships
+            if person_relationships:
+                response += "**Documented Relationships:**\n\n"
+                for rel in person_relationships:
+                    rel_type = rel.get("type", "unknown").replace("_", " ")
+                    rel_desc = rel.get("description", "")
+                    rel_quote = rel.get("quote", "")
+                    rel_source = rel.get("source", "Unknown")
+                    
+                    response += f"- **{rel_type}**: {rel_desc}\n"
+                    if rel_quote:
+                        response += f"  > \"{rel_quote[:200]}{'...' if len(rel_quote) > 200 else ''}\"\n"
+                    response += f"  *Source: {rel_source}*\n\n"
+            
+            # Document relevant claims
+            if person_claims:
+                response += "**Relevant Statements:**\n\n"
+                for claim in person_claims[:5]:  # Limit to 5 most relevant
+                    claim_text = claim.get("claim", "")
+                    claim_quote = claim.get("quote", "")
+                    claim_source = claim.get("source", "Unknown")
+                    
+                    response += f"- {claim_text}\n"
+                    if claim_quote:
+                        quote_text = claim_quote if isinstance(claim_quote, str) else (claim_quote[0] if claim_quote else "")
+                        if quote_text:
+                            response += f"  > \"{str(quote_text)[:200]}{'...' if len(str(quote_text)) > 200 else ''}\"\n"
+                    response += f"  *Source: {claim_source}*\n\n"
+            
+            response += "---\n\n"
+    
+    # Look for specific benefit-related evidence in claims
+    benefit_keywords = {
+        "financial": ["money", "insurance", "beneficiary", "inherit", "debt", "owed", "pay", "financial", "estate", "will", "property", "asset"],
+        "practical": ["secret", "knew about", "blackmail", "witness", "threat", "obstacle", "control", "power", "business"],
+        "emotional": ["jealous", "jealousy", "angry", "hate", "revenge", "affair", "cheating", "ex-", "custody", "divorce", "fight", "argument", "conflict"]
+    }
+    
+    benefit_evidence = {"financial": [], "practical": [], "emotional": []}
+    
+    for claim in claims:
+        claim_text = claim.get("claim", "").lower()
+        quote = claim.get("quote", "")
+        if isinstance(quote, list):
+            quote = quote[0] if quote else ""
+        quote_lower = str(quote).lower()
+        
+        for benefit_type, keywords in benefit_keywords.items():
+            if any(kw in claim_text or kw in quote_lower for kw in keywords):
+                benefit_evidence[benefit_type].append(claim)
+    
+    # Add benefit-related evidence sections
+    if any(benefit_evidence.values()):
+        response += "### Evidence Relevant to Potential Benefits\n\n"
+        
+        if benefit_evidence["financial"]:
+            response += "#### Financial Evidence\n\n"
+            for claim in benefit_evidence["financial"][:5]:
+                subject = claim.get("subject", "Unknown")
+                claim_text = claim.get("claim", "")
+                quote = claim.get("quote", "")
+                source = claim.get("source", "Unknown")
+                
+                response += f"**{subject}**: {claim_text}\n"
+                if quote:
+                    quote_text = quote if isinstance(quote, str) else (quote[0] if quote else "")
+                    if quote_text:
+                        response += f"> \"{str(quote_text)[:200]}...\"\n"
+                response += f"*Source: {source}*\n\n"
+        
+        if benefit_evidence["practical"]:
+            response += "#### Practical/Strategic Evidence\n\n"
+            for claim in benefit_evidence["practical"][:5]:
+                subject = claim.get("subject", "Unknown")
+                claim_text = claim.get("claim", "")
+                quote = claim.get("quote", "")
+                source = claim.get("source", "Unknown")
+                
+                response += f"**{subject}**: {claim_text}\n"
+                if quote:
+                    quote_text = quote if isinstance(quote, str) else (quote[0] if quote else "")
+                    if quote_text:
+                        response += f"> \"{str(quote_text)[:200]}...\"\n"
+                response += f"*Source: {source}*\n\n"
+        
+        if benefit_evidence["emotional"]:
+            response += "#### Emotional/Relational Evidence\n\n"
+            for claim in benefit_evidence["emotional"][:5]:
+                subject = claim.get("subject", "Unknown")
+                claim_text = claim.get("claim", "")
+                quote = claim.get("quote", "")
+                source = claim.get("source", "Unknown")
+                
+                response += f"**{subject}**: {claim_text}\n"
+                if quote:
+                    quote_text = quote if isinstance(quote, str) else (quote[0] if quote else "")
+                    if quote_text:
+                        response += f"> \"{str(quote_text)[:200]}...\"\n"
+                response += f"*Source: {source}*\n\n"
+    
+    # If we found very little, note the gaps
+    if not connected_people and not benefit_indicators and not any(benefit_evidence.values()):
+        response = "## Limited Benefit-Related Information\n\n"
+        response += f"**Victim identified:** {victim_name}\n\n"
+        response += "The documents contain limited information about potential benefits:\n\n"
+        response += "- No documented financial relationships (insurance, inheritance, debts)\n"
+        response += "- No documented conflicts that might suggest practical benefit\n"
+        response += "- No documented emotional conflicts (jealousy, revenge)\n\n"
+        response += "**Recommendation:** Consider uploading:\n"
+        response += "- Financial records\n"
+        response += "- Insurance documentation\n"
+        response += "- Witness statements about relationships and conflicts\n"
+    
+    # Add the mandatory disclaimer
+    response += "\n\n" + MOTIVE_DISCLAIMER
     
     return (response, True)
 

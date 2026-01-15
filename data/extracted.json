@@ -3,11 +3,12 @@
     {
       "name": "Dennis Rosa Roman",
       "type": "Person",
-      "description": "Interviewee providing information about his interactions with Amanda Ploss.",
+      "description": "Interviewed individual providing a statement regarding a drug transaction",
       "mentions": [
-        "Dennis, the person in charge of this room right now is out of the cabinet.",
-        "You know what, so many people will have it and won't be.",
-        "statement by Dennis Rosa Roman"
+        "This is a statement by Dennis Rosa Roman, date of birth 8691, social security number 048881537.",
+        "Dennis, the person in charge of this room",
+        "My name is Dennis Rosa Roman.",
+        "You're talking so you know, might as well. That's good. That's good. Circulate."
       ],
       "source": [
         "booking.pdf",
@@ -16,25 +17,17 @@
       ]
     },
     {
-      "name": "Brennace Rosa Roman",
-      "type": "Person",
-      "description": "mentioned as the search number for a girl",
-      "mentions": [
-        "The search number for the girl is... Brennace Rosa Roman."
-      ],
-      "source": "booking.pdf"
-    },
-    {
       "name": "Amanda Lynn Plasse",
       "type": "Person",
-      "description": "The victim whose death is being investigated.",
+      "description": "Victim mentioned in connection with a homicide case",
       "mentions": [
-        "the guy that killed Amanda Plosh.",
-        "I knew her first name? Amanda. Yep.",
-        "the day that Amanda was killed",
+        "The guy that killed Amanda Plasse.",
+        "The day that Amanda was killed, I went and bought her some weed.",
         "Concerning: Death of Amanda Plasse",
-        "Victim(s): Amanda Lynn Plasse",
-        "I have known Amanda for a week."
+        "When I found her",
+        "I met Amanda a week ago",
+        "I knew her first name? Amanda. Yep.",
+        "Victim(s): Amanda Lynn Plasse"
       ],
       "source": [
         "booking.pdf",
@@ -47,45 +40,53 @@
     {
       "name": "Dorcas Ortiz",
       "type": "Person",
-      "description": "Dennis's mother's name mentioned",
+      "description": "Mother of Dennis Rosa Roman",
       "mentions": [
-        "Mom's last name? Uh, Ortiz. Her first name? Dorcas."
+        "Mom's last name? Ortiz. Her first name? Dorcas."
       ],
       "source": "booking.pdf"
     },
-    {
-      "name": "unknown",
-      "type": "Organization",
-      "description": "law enforcement agency referenced",
-      "mentions": [
-        "I'm in the box man.",
-        "You guys have the right guy.",
-        "You guys have the wrong guy."
-      ],
-      "source": "booking.pdf"
-    },
+    
     {
       "name": "2008",
       "type": "Date",
-      "description": "year when Dennis was hit by a car",
+      "description": "Year when Dennis was hit by a car",
       "mentions": [
         "I got hit by a car. Yeah. In 2008, when I was 16 years old."
       ],
       "source": "booking.pdf"
     },
     {
+      "name": "454-711",
+      "type": "Other",
+      "description": "Phone number of Dennis's girlfriend mentioned",
+      "mentions": [
+        "You guys took my phone. How am I supposed to contact her?"
+      ],
+      "source": "booking.pdf"
+    },
+    {
       "name": "15 bucks",
       "type": "Money",
-      "description": "cost of a baby thermometer mentioned in context",
+      "description": "Value of a baby thermometer mentioned",
       "mentions": [
         "It's just 15 bucks."
       ],
       "source": "booking.pdf"
     },
     {
+      "name": "Q35",
+      "type": "Other",
+      "description": "Code or classification mentioned during the interview",
+      "mentions": [
+        "It says it right there on Q35."
+      ],
+      "source": "booking.pdf"
+    },
+    {
       "name": "Eric",
       "type": "Person",
-      "description": "Sergeant from the Chicopee Police Department.",
+      "description": "Sergeant from the Chicopee Police Department",
       "mentions": [
         "Eric's from the Chicopee Police Department. He's a sergeant."
       ],
@@ -94,10 +95,10 @@
     {
       "name": "Isaiah Kenny",
       "type": "Person",
-      "description": "Friend of Dennis who accompanied him to Amanda's house.",
+      "description": "Friend of Dennis who was with him when he delivered marijuana to Amanda",
       "mentions": [
         "I was with my friend, like, once again, Isaiah Kenny.",
-        "I was with my friend Isaiah Kenny."
+        "When I went there, I was with my friend Isaiah Kenny."
       ],
       "source": [
         "Roman-interview.pdf",
@@ -107,11 +108,10 @@
     {
       "name": "Crystal",
       "type": "Person",
-      "description": "Dennis's ex-girlfriend.",
+      "description": "Dennis's girlfriend at the time; mentioned in context of conversations about Amanda",
       "mentions": [
-        "I was with Crystal at the time.",
-        "my ex-girlfriend? Yeah.",
-        "I was with another girl. You know what I'm saying? Yeah."
+        "My ex-girlfriend? Yeah. Look what she did to me. Stabbed me with a fucking butter knife.",
+        "You met the girl too, though. Crystal, my ex-girlfriend, met the girl too."
       ],
       "source": [
         "Roman-interview.pdf",
@@ -119,60 +119,36 @@
       ]
     },
     {
-      "name": "94 Crow Street, Springfield, Mass",
+      "name": "Chicopee",
       "type": "Location",
-      "description": "Current address of Dennis.",
+      "description": "Location where Dennis first met Amanda and where he lived",
       "mentions": [
-        "What's your address now? Right now, 94 Crow Street, Springfield, Mass."
+        "You're from Chickabee or were from Chickabee at that time?",
+        "I called you this morning from my girlfriend's cell phone number, which is 454-7113. I was from Chicopee.",
+        "Offense Location: | Chicopee"
+      ],
+      "source": [
+        "Roman-interview.pdf",
+        "Crime Scene Services - MSP (10-18-2011).pdf",
+        "Roman-Interview-part2.pdf"
+      ]
+    },
+    {
+      "name": "Springfield",
+      "type": "Location",
+      "description": "Another location relevant to Dennis's statements",
+      "mentions": [
+        "I've seen him on many occasions in Springfield."
       ],
       "source": "Roman-interview.pdf"
     },
     {
-      "name": "Family Dollar",
-      "type": "Location",
-      "description": "Store where Amanda was last seen",
-      "mentions": [
-        "I met her by Sammy Dollar in Fineshi in Chickabee.",
-        "I met her by family dollar"
-      ],
-      "source": [
-        "Roman-interview.pdf",
-        "Roman-Interview-part2.pdf"
-      ]
-    },
-    {
-      "name": "Chicopee Police Department",
-      "type": "Organization",
-      "description": "The police department involved in the investigation.",
-      "mentions": [
-        "Chicopee Police Department Page: 1",
-        "Eric's from the Chicopee Police Department."
-      ],
-      "source": [
-        "Roman-interview.pdf",
-        "Seth Green (8-26-2011)_Redacted.pdf"
-      ]
-    },
-    {
-      "name": "Mikey",
-      "type": "Person",
-      "description": "Child of Crystal, Dennis's ex-girlfriend.",
-      "mentions": [
-        "her son, Mikey.",
-        "Did Crystal have any kids? Yeah, she had a little boy. About two."
-      ],
-      "source": [
-        "Roman-interview.pdf",
-        "Roman-Interview-part2.pdf"
-      ]
-    },
-    {
       "name": "November 1, 2013",
       "type": "Date",
-      "description": "Approximate time Dennis knew Amanda before her death.",
+      "description": "Date when the statement was recorded",
       "mentions": [
-        "Statement's being taken on Thursday, November 1st, 2013",
-        "Did you know her about a week or two before she got killed? Yeah."
+        "And today's date is November 1st, really, huh? Yes. 11-1-2013.",
+        "Statement's being taken on Thursday, November 1st, 2013."
       ],
       "source": [
         "Roman-interview.pdf",
@@ -182,16 +158,29 @@
     {
       "name": "$50",
       "type": "Money",
-      "description": "Price Dennis estimates for the bag of weed he delivered.",
+      "description": "Alleged cost of the marijuana",
       "mentions": [
-        "How much would that cost 50 bucks."
+        "How much would that cost 50 bucks?"
       ],
       "source": "Roman-interview.pdf"
     },
     {
+      "name": "Family Dollar",
+      "type": "Location",
+      "description": "Store where Dennis mentioned meeting Amanda",
+      "mentions": [
+        "The girl Amanda. Yes, she was just walking out of Family Dollar.",
+        "I met her by family dollar in Chicopee and asked me if I could get her some bud."
+      ],
+      "source": [
+        "Roman-interview.pdf",
+        "Roman-Interview-part2.pdf"
+      ]
+    },
+    {
       "name": "Seth Jeremiah Green",
       "type": "Person",
-      "description": "The individual making the statement regarding Amanda Plasse's death.",
+      "description": "Suspect listed in connection with the fatal stabbing.",
       "mentions": [
         "Suspect(s): Seth Green",
         "Statement of: Seth Jeremiah Green"
@@ -204,27 +193,27 @@
     {
       "name": "Friendly's",
       "type": "Organization",
-      "description": "Employers of Amanda Plasse where she was supposed to work.",
+      "description": "Place of employment for Amanda Plasse.",
       "mentions": [
-        "...she has work at 5:00 at Friendly's on Memorial Drive."
-      ],
-      "source": "Seth Green (8-26-2011)_Redacted.pdf"
-    },
-    {
-      "name": "Chicopee, MA",
-      "type": "Location",
-      "description": "Location of the police station and the address associated with both individuals.",
-      "mentions": [
-        "...at the Chicopee Police Station Detective Bureau."
+        "She has work at 5:00 at Friendly's"
       ],
       "source": "Seth Green (8-26-2011)_Redacted.pdf"
     },
     {
       "name": "Phil Beaulieu and Sons",
       "type": "Organization",
-      "description": "Seth's employer mentioned in the statement.",
+      "description": "Seth Green's employer.",
       "mentions": [
-        "...I worked at Phil Beaulieu and Sons today."
+        "I worked at Phil Beaulieu and Sons today."
+      ],
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "name": "Chicopee, MA",
+      "type": "Location",
+      "description": "City where the events took place.",
+      "mentions": [
+        "Chicopee, MA 01013"
       ],
       "source": "Seth Green (8-26-2011)_Redacted.pdf"
     },
@@ -233,120 +222,61 @@
       "type": "Organization",
       "description": "Bank where Amanda had an account.",
       "mentions": [
-        "...she has a bank account at Bank America which is down the street."
+        "She has a bank account at Bank America"
       ],
       "source": "Seth Green (8-26-2011)_Redacted.pdf"
     },
     {
       "name": "School Street",
       "type": "Location",
-      "description": "The street name provided by passersby during the emergency response.",
+      "description": "Street where Amanda's apartment is located.",
       "mentions": [
-        "...they told me School Street."
+        "They told me School Street"
       ],
       "source": "Seth Green (8-26-2011)_Redacted.pdf"
     },
     {
-      "name": "Elms College",
-      "type": "Location",
-      "description": "Nearby location mentioned while driving.",
+      "name": "10:27 P.M.",
+      "type": "Date",
+      "description": "Timestamp when Seth signed a permission to search form for his car.",
       "mentions": [
-        "...came up through the Chicopee Center past the 7-11 by Elms College."
+        "10:27 P.M."
+      ],
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "name": "$250",
+      "type": "Money",
+      "description": "Amount of cash Amanda had from tips.",
+      "mentions": [
+        "she had about two hundred and fifty dollars in cash from tips"
       ],
       "source": "Seth Green (8-26-2011)_Redacted.pdf"
     },
     {
       "name": "Jessie M. Coulombe",
       "type": "Person",
-      "description": "Suspect in the case.",
+      "description": "Suspect listed in connection with the fatal stabbing.",
       "mentions": [
         "Suspect(s): Jessie M. Coulombe"
       ],
       "source": "Crime Scene Services - MSP (10-18-2011).pdf"
     },
     {
-      "name": "Chicopee",
-      "type": "Location",
-      "description": "City where various events occurred",
-      "mentions": [
-        "from Chicopee.",
-        "Offense Location: | Chicopee"
-      ],
-      "source": [
-        "Crime Scene Services - MSP (10-18-2011).pdf",
-        "Roman-Interview-part2.pdf"
-      ]
-    },
-    {
-      "name": "October 20, 2011",
-      "type": "Date",
-      "description": "Date evidence was processed.",
-      "mentions": [
-        "Date Approved: 10-20-11",
-        "On October 6, 2011 I processed..."
-      ],
-      "source": "Crime Scene Services - MSP (10-18-2011).pdf"
-    },
-    {
-      "name": "Alpha Randolph",
-      "type": "Person",
-      "description": "Suspect in the case.",
-      "mentions": [
-        "Suspect(s): Alpha Randolph"
-      ],
-      "source": "Crime Scene Services - MSP (10-18-2011).pdf"
-    },
-    {
-      "name": "Wilson Mathieson",
-      "type": "Person",
-      "description": "Suspect in the case.",
-      "mentions": [
-        "Suspect(s): Wilson Mathieson"
-      ],
-      "source": "Crime Scene Services - MSP (10-18-2011).pdf"
-    },
-    {
-      "name": "Roberto Perez",
-      "type": "Person",
-      "description": "Suspect in the case.",
-      "mentions": [
-        "Suspect(s): Roberto Perez"
-      ],
-      "source": "Crime Scene Services - MSP (10-18-2011).pdf"
-    },
-    {
-      "name": "Chad Green",
-      "type": "Person",
-      "description": "Suspect in the case.",
-      "mentions": [
-        "Suspect(s): Chad Green"
-      ],
-      "source": "Crime Scene Services - MSP (10-18-2011).pdf"
-    },
-    {
-      "name": "Timothy Oyler",
-      "type": "Person",
-      "description": "Suspect in the case.",
-      "mentions": [
-        "Suspect(s): Timothy Oyler"
-      ],
-      "source": "Crime Scene Services - MSP (10-18-2011).pdf"
-    },
-    {
       "name": "Trooper Todd R. Girouard",
       "type": "Person",
-      "description": "Reporting officer.",
+      "description": "Reporting officer of the investigation.",
       "mentions": [
-        "Trooper Todd R. Girouard, #3271"
+        "Reporting Officer (Rank, First, MI, Last & ID#) Trooper Todd R. Girouard"
       ],
       "source": "Crime Scene Services - MSP (10-18-2011).pdf"
     },
     {
       "name": "Sergeant Kerry A. Gilpin",
       "type": "Person",
-      "description": "Approved the report.",
+      "description": "Approving officer of the investigation report.",
       "mentions": [
-        "Sergeant Kerry A. Gilpin, #2526"
+        "Approved by (Rank, First, MI, Last & ID#) Sergeant Kerry A. Gilpin"
       ],
       "source": "Crime Scene Services - MSP (10-18-2011).pdf"
     },
@@ -355,56 +285,79 @@
       "type": "Person",
       "description": "Investigator assigned to the case.",
       "mentions": [
-        "Investigator: Trooper Ronald Gibbons #2180",
-        "given to Trooper Ronald Gibbons"
+        "Investigator: Trooper Ronald Gibbons"
       ],
-      "source": [
-        "Crime Scene Services - MSP (10-18-2011).pdf",
-        "Roman-Interview-part2.pdf"
-      ]
+      "source": "Crime Scene Services - MSP (10-18-2011).pdf"
     },
     {
-      "name": "Gary Fitzgerald",
+      "name": "Hampden County Detective Unit",
+      "type": "Organization",
+      "description": "Unit of Massachusetts State Police involved in the investigation.",
+      "mentions": [
+        "MSP Hampden County Detective Unit"
+      ],
+      "source": "Crime Scene Services - MSP (10-18-2011).pdf"
+    },
+    {
+      "name": "October 6, 2011",
+      "type": "Date",
+      "description": "Date evidence was processed.",
+      "mentions": [
+        "On October 6, 2011"
+      ],
+      "source": "Crime Scene Services - MSP (10-18-2011).pdf"
+    },
+    {
+      "name": "August 26, 2011",
+      "type": "Date",
+      "description": "Date of the offense, fatal stabbing.",
+      "mentions": [
+        "Date of Offense: 8/26/2011"
+      ],
+      "source": "Crime Scene Services - MSP (10-18-2011).pdf"
+    },
+    {
+      "name": "Mikey",
       "type": "Person",
-      "description": "Trooper present during the statement",
+      "description": "Crystal's son who was present with Dennis during encounters with Amanda",
       "mentions": [
-        "Trooper Gary Fitzgerald"
-      ],
-      "source": "Roman-Interview-part2.pdf"
-    },
-    {
-      "name": "PricewaterhouseMemorial Drive",
-      "type": "Location",
-      "description": "Location related to the statement",
-      "mentions": [
-        "when she came out of work at the PricewaterhouseMemorial Drive."
-      ],
-      "source": "Roman-Interview-part2.pdf"
-    },
-    {
-      "name": "Cabot Package Store",
-      "type": "Location",
-      "description": "Location of Crystal's residence",
-      "mentions": [
-        "by the Cabot Package Store"
-      ],
-      "source": "Roman-Interview-part2.pdf"
-    },
-    {
-      "name": "Stonina Projects",
-      "type": "Location",
-      "description": "Location related to an event",
-      "mentions": [
-        "I went to Stonina Projects"
+        "Crystal had a little boy who was about two years old."
       ],
       "source": "Roman-Interview-part2.pdf"
     },
     {
       "name": "Westfield Police Department",
       "type": "Organization",
-      "description": "Police department involved in the case",
+      "description": "Law enforcement agency involved in the case",
       "mentions": [
-        "Westfield Police Department"
+        "...to Trooper Ronald Gibbons, I've been Eric Watson, Trooper Gary Fitzgerald, Westfield Police Department."
+      ],
+      "source": "Roman-Interview-part2.pdf"
+    },
+    {
+      "name": "Cabot Package Store",
+      "type": "Location",
+      "description": "Location near where Amanda lived",
+      "mentions": [
+        "She lived by the Cabot Package Store on the corner of Cabot Street."
+      ],
+      "source": "Roman-Interview-part2.pdf"
+    },
+    {
+      "name": "Stonina Projects",
+      "type": "Location",
+      "description": "Location related to the event where Amanda was killed",
+      "mentions": [
+        "I went to Stonina Projects, and she was not the one who came to her back door."
+      ],
+      "source": "Roman-Interview-part2.pdf"
+    },
+    {
+      "name": "10 or 11 in the morning",
+      "type": "Date",
+      "description": "Approximate time when the event with Amanda occurred",
+      "mentions": [
+        "It was around 10 or 11 in the morning."
       ],
       "source": "Roman-Interview-part2.pdf"
     }
@@ -412,302 +365,306 @@
   "claims": [
     {
       "subject": "Dennis Rosa Roman",
-      "claim": "Claims innocence in the context of a murder investigation",
-      "quote": "I'm sorry. What I'm trying to do, listen, is to get you out of this. I'm trying to be nice with you.",
-      "context": "Dennis insists that he did not commit the murder and expresses distrust in the authorities.",
+      "claim": "Dennis claims innocence in a murder case",
+      "quote": "I'm sorry. What I'm trying to do is to get you out of this. I'm trying to be nice with you.",
+      "context": "Dennis expresses frustration over being treated like a suspect in a murder case.",
       "source": "booking.pdf"
     },
     {
       "subject": "Dennis Rosa Roman",
-      "claim": "Claims he may be targeted for murder",
-      "quote": "If I get killed, just know there's somebody cut off here.",
-      "context": "Dennis expresses fear for his life regarding potential consequences after the interview.",
+      "claim": "Dennis claims he is being wrongly accused",
+      "quote": "You guys have the wrong guy. You guys have the Nat Killer still out on the streets.",
+      "context": "Dennis asserts his innocence and that the real perpetrator is still at large.",
+      "source": "booking.pdf"
+    },
+    {
+      "subject": "Dennis Rosa Roman",
+      "claim": "Dennis expresses concern for his family's safety",
+      "quote": "If anybody gets hurt from my family, that's on you.",
+      "context": "Dennis warns the officers that if something happens to his family, they will be responsible.",
+      "source": "booking.pdf"
+    },
+    {
+      "subject": "Dennis Rosa Roman",
+      "claim": "Dennis describes a relationship with Amanda Plasse",
+      "quote": "I was there, obviously. I tried to save her.",
+      "context": "Dennis claims he attempted to help Amanda during the incident.",
+      "source": "booking.pdf"
+    },
+    {
+      "subject": "Dennis Rosa Roman",
+      "claim": "Dennis admits suicidal feelings",
+      "quote": "Yeah, I am suicidal actually. I am.",
+      "context": "Dennis shares his mental state during the interview.",
       "source": "booking.pdf"
     },
     {
       "subject": "Dennis",
-      "claim": "Dennis claims he delivered cannabis to Amanda on the day she was killed.",
-      "quote": "So the day of Amanda's kill, I went and bought her some weed.",
-      "context": "Dennis recounting the events leading up to Amanda's death and his involvement.",
+      "claim": "Dennis claims he knew Amanda for about a week or two before her death.",
+      "quote": [
+        "I don't know if she knew him or not, or if that was an acquaintance of hers."
+      ],
+      "context": "Dennis discusses his interactions with Amanda leading up to her death.",
       "source": "Roman-interview.pdf"
     },
     {
       "subject": "Dennis",
-      "claim": "Dennis had no contact with Amanda after he delivered the weed.",
-      "quote": "I never stepped in her house. I've never seen the inside of her house.",
-      "context": "Dennis maintains he had no further interaction with Amanda after the delivery.",
+      "claim": "He delivered marijuana to Amanda on the day she was killed.",
+      "quote": [
+        "So the day of manager's kill, I went and bought her some weed."
+      ],
+      "context": "This claim was made while recounting his last interaction with Amanda.",
+      "source": "Roman-interview.pdf"
+    },
+    {
+      "subject": "Dennis",
+      "claim": "Dennis felt threatened by an unidentified individual related to the case.",
+      "quote": [
+        "I'm just terrified for my life. This is all I know."
+      ],
+      "context": "Dennis expresses fear while discussing sightings of a man he believes may be dangerous.",
       "source": "Roman-interview.pdf"
     },
     {
       "subject": "Seth Green",
-      "claim": "Describes his last interactions with Amanda and events leading to discovering her body.",
-      "quote": "I was getting ready to move into her house. She is not that close to her family.",
-      "context": "Seth talks about his relationship with Amanda and the circumstances of the day.",
+      "claim": "Had a close relationship with Amanda.",
+      "quote": "We have been hanging out together every single day for a week now.",
+      "context": "Seth describes the brief period he knew Amanda.",
       "source": "Seth Green (8-26-2011)_Redacted.pdf"
     },
     {
-      "subject": "Amanda",
-      "claim": "Reported Amanda was happy and had recently ended a bad relationship with her ex-boyfriend.",
+      "subject": "Amanda Plasse",
+      "claim": "Had experienced an abusive relationship.",
       "quote": "She said that her ex boyfriend was abusive.",
-      "context": "Context of Amanda's recent emotional state and relationship history.",
+      "context": "Seth recounts Amanda's statements about her past.",
       "source": "Seth Green (8-26-2011)_Redacted.pdf"
-    },
-    {
-      "subject": "Amanda",
-      "claim": "Seth describes finding Amanda's body and the condition it was in.",
-      "quote": "Her throat was slit twice.",
-      "context": "Seth recounting the traumatic moment of discovering Amanda.",
-      "source": "Seth Green (8-26-2011)_Redacted.pdf"
-    },
-    {
-      "subject": "Trooper Ronald Gibbons",
-      "claim": "Responded to a homicide.",
-      "quote": "On August 26, 2011 at approximately 1930 hrs. I responded to a homicide...",
-      "context": "Trooper Gibbons details his arrival at the homicide scene where the victim was found.",
-      "source": "Crime Scene Services - MSP (10-18-2011).pdf"
-    },
-    {
-      "subject": "Amanda Lynn Plasse",
-      "claim": "Was found deceased with multiple injuries.",
-      "quote": "I observed the body of a deceased female laying supine on the kitchen floor.",
-      "context": "Description of the victim's condition at the crime scene.",
-      "source": "Crime Scene Services - MSP (10-18-2011).pdf"
     },
     {
       "subject": "Seth Green",
-      "claim": "Fingerprint evidence linked to the crime scene.",
-      "quote": "it was determined that friction ridge impression 2-10 was individualized to the left palm of Seth Green.",
-      "context": "Fingerprint analysis from the broken window.",
+      "claim": "Discovered Amanda deceased.",
+      "quote": "I saw red blood but I thought it was paint. She was laying there face up. Her throat was slit twice.",
+      "context": "Seth describes the scene he encountered at Amanda's apartment.",
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "subject": "Amanda Plasse",
+      "claim": "Was supposed to meet Seth after work.",
+      "quote": "I texted Amanda and then I walked back to my car.",
+      "context": "Seth describes his attempts to contact Amanda when she was late.",
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "subject": "Seth Green",
+      "claim": "Had a knife that might have been left at Amanda's apartment.",
+      "quote": "I think I have my knife at her house. It is a M Tech knife.",
+      "context": "Seth mentions a possible knife at Amanda's place.",
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "subject": "Victim's status",
+      "claim": "Amanda Lynn Plasse is deceased.",
+      "quote": "I observed the body of a deceased female laying supine on the kitchen floor.",
+      "context": "Description of the crime scene.",
+      "source": "Crime Scene Services - MSP (10-18-2011).pdf"
+    },
+    {
+      "subject": "Seth Green's involvement",
+      "claim": "Seth Green's fingerprint was found at the crime scene.",
+      "quote": "it was determined that friction ridge impression 2-9 was individualized to the #8 left middle finger of Seth Green.",
+      "context": "Analysis of the friction ridge impressions.",
+      "source": "Crime Scene Services - MSP (10-18-2011).pdf"
+    },
+    {
+      "subject": "Jessie M. Coulombe's involvement",
+      "claim": "Frictions from Jessie M. Coulombe were analyzed.",
+      "quote": "Major Case Prints - Jessie Coulombe",
+      "context": "List of known prints analyzed.",
       "source": "Crime Scene Services - MSP (10-18-2011).pdf"
     },
     {
       "subject": "Dennis Rosa Roman",
-      "claim": "Denies carrying weapons",
-      "quote": "I've never had... I'm sorry, I'm scared about that.",
-      "context": "In response to questions about carrying weapons.",
-      "source": "Roman-Interview-part2.pdf"
-    },
-    {
-      "subject": "Dennis Rosa Roman's ex-girlfriend Crystal",
-      "claim": "Crystal stabbed Dennis with a butter knife",
-      "quote": "My ex-girlfriend? ... Stabbed me with a fucking butter knife.",
-      "context": "On a past incident of domestic violence.",
+      "claim": "He witnessed events related to Amanda's death and an interaction with a suspicious male.",
+      "quote": "The guy looked suspicious as hell.",
+      "context": "Describing the individual who took money from Amanda.",
       "source": "Roman-Interview-part2.pdf"
     },
     {
       "subject": "Amanda",
-      "claim": "Amanda was killed after asking for weed",
-      "quote": "She asked me if I could get her some weed.",
-      "context": "Dennis recounts his last interaction with Amanda.",
+      "claim": "Amanda was killed on the same day Dennis provided her with weed.",
+      "quote": "I know it was the same day that she got killed because later I was with my girlfriend Crystal.",
+      "context": "Dennis's timeline of events regarding Amanda's death.",
       "source": "Roman-Interview-part2.pdf"
     },
     {
-      "subject": "The assailant",
-      "claim": "Identified a suspicious individual",
-      "quote": "The guy looked suspicious as hell.",
-      "context": "Dennis describes the encounter at Amanda's back door.",
+      "subject": "Dennis",
+      "claim": "He was involved in multiple drug transactions with Amanda.",
+      "quote": "I got weed for her about three times. I am a fucking nice guy.",
+      "context": "Dennis asserts that he was helping Amanda out.",
       "source": "Roman-Interview-part2.pdf"
     }
   ],
   "events": [
     {
       "date": "2008",
-      "description": "Dennis was hit by a car",
+      "description": "Dennis was hit by a car when he was 16 years old",
       "people_involved": [
         "Dennis Rosa Roman"
       ],
       "location": "unknown",
-      "date_source": "Dennis mentions the year he was hit.",
+      "date_source": "Dennis's statement about being hit by a car.",
       "source": "booking.pdf",
       "document_date": "unknown"
     },
     {
       "date": "unknown",
-      "description": "Dennis states he is in custody",
+      "description": "Dennis's girlfriend's phone was taken by officials",
       "people_involved": [
         "Dennis Rosa Roman"
       ],
-      "location": "booking room",
-      "date_source": "Contextual clues about the situation.",
+      "location": "custody",
+      "date_source": "Dennis's statement about needing to contact his girlfriend.",
       "source": "booking.pdf",
       "document_date": "unknown"
     },
     {
       "date": "unknown",
-      "description": "Dennis met Amanda Ploss at Family Dollar.",
+      "description": "Dennis delivered marijuana to Amanda's residence shortly before she was killed.",
       "people_involved": [
         "Dennis",
-        "Amanda Ploss"
-      ],
-      "location": "Family Dollar",
-      "date_source": "Statement by Dennis mentioning he met her there.",
-      "source": "Roman-interview.pdf",
-      "document_date": "November 1, 2013"
-    },
-    {
-      "date": "around November 2011",
-      "description": "Dennis first interacted with Amanda Ploss.",
-      "people_involved": [
-        "Dennis",
-        "Amanda Ploss"
-      ],
-      "location": "Chicopee",
-      "date_source": "Dennis states he met Amanda a week or two before she was killed.",
-      "source": "Roman-interview.pdf",
-      "document_date": "November 1, 2013"
-    },
-    {
-      "date": "unknown",
-      "description": "Dennis delivered cannabis to Amanda's residence.",
-      "people_involved": [
-        "Dennis",
-        "Amanda Ploss"
+        "Amanda"
       ],
       "location": "Amanda's residence",
-      "date_source": "Dennis discussing the delivery.",
+      "date_source": "Context of the conversation regarding delivery of the marijuana.",
       "source": "Roman-interview.pdf",
       "document_date": "November 1, 2013"
     },
     {
-      "date": "unknown",
-      "description": "Dennis heard a conversation about money and drugs outside Amanda's residence.",
+      "date": "August 2011",
+      "description": "Amanda was killed",
       "people_involved": [
-        "Dennis",
-        "Unknown male"
-      ],
-      "location": "Amanda's residence",
-      "date_source": "Dennis recounting the events outside Amanda's home.",
-      "source": "Roman-interview.pdf",
-      "document_date": "November 1, 2013"
-    },
-    {
-      "date": "November 1, 2013",
-      "description": "Interview conducted with Dennis.",
-      "people_involved": [
-        "Dennis",
-        "Eric"
+        "Amanda Ploss"
       ],
       "location": "unknown",
-      "date_source": "Document Date.",
+      "date_source": "Inferred from Dennis's statements surrounding interactions and timing.",
       "source": "Roman-interview.pdf",
       "document_date": "November 1, 2013"
     },
     {
-      "date": "08/26/2011",
-      "description": "Seth's last interactions with Amanda and discovering her body.",
+      "date": "unknown",
+      "description": "Seth Green and Amanda Plasse started hanging out regularly.",
       "people_involved": [
         "Seth Green",
         "Amanda Plasse"
       ],
-      "location": "Amanda's apartment on Tinney Street, Chicopee",
-      "date_source": "Interview statement on the same date.",
+      "location": "unknown",
+      "date_source": "Seth mentions they have known each other for a week.",
       "source": "Seth Green (8-26-2011)_Redacted.pdf",
       "document_date": "08/26/2011 8:05 P.M."
     },
     {
-      "date": "unknown",
-      "description": "Amanda was late for work, indicating she was missing.",
-      "people_involved": [
-        "Amanda Plasse"
-      ],
-      "location": "Friendly's on Memorial Drive",
-      "date_source": "Seth's statement regarding the timeline of events.",
-      "source": "Seth Green (8-26-2011)_Redacted.pdf",
-      "document_date": "08/26/2011 8:05 P.M."
-    },
-    {
-      "date": "08/25/2011 - 08/26/2011",
-      "description": "Seth and Amanda spent the night together before her death.",
+      "date": "08/25/2011",
+      "description": "Seth and Amanda spent the night together at Amanda's apartment.",
       "people_involved": [
         "Seth Green",
         "Amanda Plasse"
       ],
       "location": "Amanda's apartment",
-      "date_source": "Seth's recollection of events leading up to the discovery.",
+      "date_source": "Seth states they stayed the whole night.",
       "source": "Seth Green (8-26-2011)_Redacted.pdf",
       "document_date": "08/26/2011 8:05 P.M."
     },
     {
-      "date": "8/26/2011",
-      "description": "Fatal stabbing incident involving Amanda Lynn Plasse.",
+      "date": "08/26/2011, around 8:30 A.M.",
+      "description": "Seth left Amanda's apartment.",
+      "people_involved": [
+        "Seth Green",
+        "Amanda Plasse"
+      ],
+      "location": "Amanda's apartment",
+      "date_source": "Seth recounts leaving at that time.",
+      "source": "Seth Green (8-26-2011)_Redacted.pdf",
+      "document_date": "08/26/2011 8:05 P.M."
+    },
+    {
+      "date": "08/26/2011, around 6:30 P.M.",
+      "description": "Seth arrived at Friendly's to meet Amanda.",
+      "people_involved": [
+        "Seth Green",
+        "Amanda Plasse"
+      ],
+      "location": "Friendly's",
+      "date_source": "Seth states he got there at that time looking for Amanda.",
+      "source": "Seth Green (8-26-2011)_Redacted.pdf",
+      "document_date": "08/26/2011 8:05 P.M."
+    },
+    {
+      "date": "08/26/2011",
+      "description": "Seth discovered Amanda's body.",
+      "people_involved": [
+        "Seth Green"
+      ],
+      "location": "Amanda's apartment",
+      "date_source": "Seth describes the moment he found Amanda.",
+      "source": "Seth Green (8-26-2011)_Redacted.pdf",
+      "document_date": "08/26/2011 8:05 P.M."
+    },
+    {
+      "date": "08/26/2011",
+      "description": "Homicide of Amanda Lynn Plasse occurred.",
       "people_involved": [
         "Amanda Lynn Plasse",
         "Seth Green",
         "Jessie M. Coulombe"
       ],
       "location": "73 School St. (Apartment 3R), Chicopee",
-      "date_source": "Mentioned in the report.",
-      "source": "Crime Scene Services - MSP (10-18-2011).pdf",
-      "document_date": "10/18/11"
-    },
-    {
-      "date": "unknown",
-      "description": "Processing of evidence including fingerprints and footwear impressions.",
-      "people_involved": [
-        "Trooper Todd R. Girouard",
-        "Trooper Ronald Gibbons"
-      ],
-      "location": "Chicopee",
-      "date_source": "Written examination dates were mentioned in the report.",
+      "date_source": "Date of Offense",
       "source": "Crime Scene Services - MSP (10-18-2011).pdf",
       "document_date": "10/18/11"
     },
     {
       "date": "10/6/2011",
-      "description": "Evidence processed for friction ridge impressions.",
+      "description": "Evidence was processed for friction ridge impressions.",
       "people_involved": [
-        "Trooper Ronald Gibbons"
+        "Trooper Todd R. Girouard"
       ],
       "location": "unknown",
-      "date_source": "Specific date provided in the document.",
+      "date_source": "Date specified in the report",
       "source": "Crime Scene Services - MSP (10-18-2011).pdf",
       "document_date": "10/18/11"
     },
     {
-      "date": "around November 1, 2013",
-      "description": "Dennis provided a statement regarding Amanda's murder",
+      "date": "09/6/2011",
+      "description": "Black folding knife was processed for prints.",
+      "people_involved": [
+        "Trooper Todd R. Girouard"
+      ],
+      "location": "unknown",
+      "date_source": "Date specified in the report",
+      "source": "Crime Scene Services - MSP (10-18-2011).pdf",
+      "document_date": "10/18/11"
+    },
+    {
+      "date": "November 1, 2013",
+      "description": "Dennis provided a statement regarding his interactions around the time of Amanda's death.",
       "people_involved": [
         "Dennis Rosa Roman",
-        "Ronald Gibbons",
-        "Gary Fitzgerald"
+        "Trooper Ronald Gibbons",
+        "Trooper Gary Fitzgerald"
       ],
       "location": "Westfield Police Department",
-      "date_source": "statement given on November 1, 2013",
+      "date_source": "The statement was recorded on this date.",
       "source": "Roman-Interview-part2.pdf",
       "document_date": "November 1, 2013"
     },
     {
       "date": "unknown",
-      "description": "Amanda was killed",
+      "description": "The day Amanda was killed, during which Dennis was involved.",
       "people_involved": [
-        "Amanda"
-      ],
-      "location": "unknown",
-      "date_source": "mentioned as the day Amanda was killed.",
-      "source": "Roman-Interview-part2.pdf",
-      "document_date": "November 1, 2013"
-    },
-    {
-      "date": "unknown",
-      "description": "Dennis was stabbed by Crystal",
-      "people_involved": [
-        "Dennis",
-        "Crystal"
-      ],
-      "location": "unknown",
-      "date_source": "referred to in the context of his past.",
-      "source": "Roman-Interview-part2.pdf",
-      "document_date": "November 1, 2013"
-    },
-    {
-      "date": "unknown",
-      "description": "Dennis bought weed for Amanda",
-      "people_involved": [
-        "Dennis",
-        "Amanda"
+        "Amanda",
+        "Dennis Rosa Roman"
       ],
       "location": "Stonina Projects",
-      "date_source": "Dennis asserts he was with her that day.",
+      "date_source": "Dennis states it was the same day Amanda was reported killed.",
       "source": "Roman-Interview-part2.pdf",
       "document_date": "November 1, 2013"
     }
@@ -715,65 +672,54 @@
   "relationships": [
     {
       "person1": "Dennis Rosa Roman",
-      "person2": "Brennace Rosa Roman",
-      "type": "family",
-      "description": "Dennis refers to Brennace as a girl he is concerned about",
-      "quote": "The search number for the girl is... Brennace Rosa Roman.",
-      "source": "booking.pdf"
-    },
-    {
-      "person1": "Dennis Rosa Roman",
-      "person2": "Amanda Plosh",
-      "type": "case-related",
-      "description": "Dennis discusses Amanda in the context of a murder investigation",
-      "quote": "the guy that killed Amanda Plosh.",
+      "person2": "Amanda Plasse",
+      "type": "Case-related",
+      "description": "Dennis claims to have been present at the scene and attempted to help Amanda.",
+      "quote": "I was there, obviously. I tried to save her.",
       "source": "booking.pdf"
     },
     {
       "person1": "Dennis Rosa Roman",
       "person2": "Dorcas Ortiz",
-      "type": "family",
-      "description": "Dennis mentions his mother while discussing personal details.",
-      "quote": "Mom's last name? Uh, Ortiz. Her first name? Dorcas.",
+      "type": "Family",
+      "description": "Dorcas is Dennis's mother.",
+      "quote": "Mom's last name? Ortiz. Her first name? Dorcas.",
       "source": "booking.pdf"
     },
+   
     {
       "person1": "Dennis",
       "person2": "Amanda Ploss",
       "type": "acquaintance",
-      "description": "Dennis knew Amanda for a short period before her death.",
-      "quote": "I knew her first name? Amanda. Yep.",
+      "description": "Dennis knew Amanda for a short period; they had a brief interaction concerning drugs.",
+      "quote": [
+        "I met her by Sammy Dollar in Fineshi in Chickabee."
+      ],
       "source": "Roman-interview.pdf"
     },
     {
       "person1": "Dennis",
       "person2": "Crystal",
-      "type": "ex-girlfriend",
-      "description": "Dennis had a previous romantic relationship with Crystal.",
-      "quote": "I was with another girl... Crystal.",
-      "source": "Roman-interview.pdf"
-    },
-    {
-      "person1": "Dennis",
-      "person2": "Isaiah Kenny",
-      "type": "friend",
-      "description": "Friend who accompanied Dennis to Amanda's house.",
-      "quote": "I was with my friend, like, once again, Isaiah Kenny.",
+      "type": "romantic",
+      "description": "Dennis identifies Crystal as his girlfriend at the time.",
+      "quote": [
+        "That's my girlfriend's number, actually."
+      ],
       "source": "Roman-interview.pdf"
     },
     {
       "person1": "Seth Green",
       "person2": "Amanda Plasse",
       "type": "Romantic",
-      "description": "Seth and Amanda were developing a romantic relationship over a week.",
-      "quote": "We have been hanging out together every single day for a week now.",
+      "description": "Seth describes his recent romantic involvement with Amanda.",
+      "quote": "She said that she has never been so happy.",
       "source": "Seth Green (8-26-2011)_Redacted.pdf"
     },
     {
       "person1": "Amanda Plasse",
       "person2": "Ex-boyfriend",
       "type": "Romantic",
-      "description": "Amanda's previous relationship was described as abusive.",
+      "description": "Amanda had a past abusive relationship with an unnamed ex-boyfriend.",
       "quote": "She said that her ex boyfriend was abusive.",
       "source": "Seth Green (8-26-2011)_Redacted.pdf"
     },
@@ -781,147 +727,107 @@
       "person1": "Seth Green",
       "person2": "Ryan Duffy",
       "type": "Social",
-      "description": "Seth mentions another friend who had previous romantic involvement with Amanda.",
-      "quote": "My best friend Ryan has also hooked up Amanda in the past.",
+      "description": "Ryan is a mutual friend who previously dated Amanda.",
+      "quote": "My best friend Ryan has also hooked up with Amanda in the past.",
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "person1": "Seth Green",
+      "person2": "Rich",
+      "type": "Social",
+      "description": "Rich is a friend of Seth who visited Amanda.",
+      "quote": "Rich brought some girl there that I had never seen.",
       "source": "Seth Green (8-26-2011)_Redacted.pdf"
     },
     {
       "person1": "Amanda Lynn Plasse",
       "person2": "Seth Green",
       "type": "Case-related",
-      "description": "Amanda is the victim in a case involving Seth as a suspect.",
-      "quote": "Victim(s): Amanda Lynn Plasse",
+      "description": "Seth Green is listed as a suspect in the case involving Amanda Lynn Plasse.",
+      "quote": "Suspect(s): Seth Green; Amanda Lynn Plasse",
       "source": "Crime Scene Services - MSP (10-18-2011).pdf"
     },
     {
-      "person1": "Seth Green",
+      "person1": "Amanda Lynn Plasse",
       "person2": "Jessie M. Coulombe",
       "type": "Case-related",
-      "description": "Both are listed as suspects in the case.",
-      "quote": "Suspect(s): Seth Green; Jessie M. Coulombe",
-      "source": "Crime Scene Services - MSP (10-18-2011).pdf"
-    },
-    {
-      "person1": "Trooper Todd R. Girouard",
-      "person2": "Sergeant Kerry A. Gilpin",
-      "type": "Professional",
-      "description": "Trooper who prepared the report and Sergeant who approved it.",
-      "quote": "Approved by (Rank, First, MI, Last & ID#) Sergeant Kerry A. Gilpin",
-      "source": "Crime Scene Services - MSP (10-18-2011).pdf"
-    },
-    {
-      "person1": "Trooper Ronald Gibbons",
-      "person2": "Amanda Lynn Plasse",
-      "type": "Case-related",
-      "description": "Trooper Gibbons is the investigator assigned to the victim's case.",
-      "quote": "Investigator: Trooper Ronald Gibbons #2180",
+      "description": "Jessie M. Coulombe is also listed as a suspect involving Amanda Lynn Plasse.",
+      "quote": "Suspect(s): Jessie M. Coulombe; Amanda Lynn Plasse",
       "source": "Crime Scene Services - MSP (10-18-2011).pdf"
     },
     {
       "person1": "Dennis Rosa Roman",
       "person2": "Crystal",
-      "type": "ex-girlfriend",
-      "description": "Dennis and Crystal have an abusive past.",
-      "quote": "My ex-girlfriend? Yeah. Look what she did to me.",
+      "type": "Romantic",
+      "description": "Dennis's ex-girlfriend",
+      "quote": "No, I'm not getting out. This is where I live. Like, you know what I'm saying?",
       "source": "Roman-Interview-part2.pdf"
     },
     {
       "person1": "Dennis Rosa Roman",
       "person2": "Amanda",
-      "type": "acquaintance",
-      "description": "Dennis interacted with Amanda before her death.",
+      "type": "Case-related",
+      "description": "Dennis provided drugs to Amanda before her death.",
       "quote": "I was with Crystal when she came out of work at the PricewaterhouseMemorial Drive.",
-      "source": "Roman-Interview-part2.pdf"
-    },
-    {
-      "person1": "Dennis Rosa Roman",
-      "person2": "Isaiah Kenny",
-      "type": "friend",
-      "description": "Isaiah was with Dennis during various events.",
-      "quote": "I was with my friend Isaiah Kenny.",
       "source": "Roman-Interview-part2.pdf"
     }
   ],
   "investigative_notes": [
     {
-      "type": "unverified_claim",
+      "type": "proximity_to_incident",
       "subject": "Dennis Rosa Roman",
-      "observation": "Dennis claims he delivered cannabis to Amanda on the day she was killed, but no corroborating evidence from Amanda is presented.",
+      "observation": "Dennis claims he delivered marijuana to Amanda on the day she was killed.",
       "evidence": [
         {
           "document": "Roman-interview.pdf",
-          "quote": "So the day of Amanda's kill, I went and bought her some weed."
+          "quote": "So the day of manager's kill, I went and bought her some weed."
+        },
+        {
+          "document": "Roman-Interview-part2.pdf",
+          "quote": "I know it was the same day that she got killed because later I was with my girlfriend Crystal."
         }
       ],
-      "follow_up_question": "Is there any evidence or witness to corroborate Dennis's claim about delivering cannabis to Amanda?"
+      "follow_up_question": "What time did Dennis deliver the marijuana to Amanda on that day?"
     },
     {
       "type": "timeline_gap",
       "subject": "Dennis Rosa Roman",
-      "observation": "There is a timeline gap as Dennis maintains he had no contact with Amanda after he delivered the weed, yet he identifies an event leading to her murder.",
+      "observation": "There are unclear details on the timeline of events between Dennis's delivery to Amanda and the discovery of her body.",
       "evidence": [
         {
           "document": "Roman-interview.pdf",
-          "quote": "I never stepped in her house. I've never seen the inside of her house."
+          "quote": "I went and bought her some weed."
         },
         {
-          "document": "Roman-interview.pdf",
-          "quote": "She asked me if I could get her some weed."
+          "document": "Crime Scene Services - MSP (10-18-2011).pdf",
+          "quote": "I observed the body of a deceased female laying supine on the kitchen floor."
         }
       ],
-      "follow_up_question": "What are the specific times associated with Dennis's claims of delivery and subsequent lack of contact with Amanda?"
-    },
-    {
-      "type": "statement_change",
-      "subject": "Dennis Rosa Roman",
-      "observation": "Dennis expresses a desire to help authorities but also displays distrust, highlighting a conflict in his statements.",
-      "evidence": [
-        {
-          "document": "booking.pdf",
-          "quote": "I'm sorry. What I'm trying to do, listen, is to get you out of this. I'm trying to be nice with you."
-        },
-        {
-          "document": "booking.pdf",
-          "quote": "If I get killed, just know there's somebody cut off here."
-        }
-      ],
-      "follow_up_question": "What are the circumstances behind Dennis's conflicting statements regarding his intentions toward the authorities?"
-    },
-    {
-      "type": "proximity_to_incident",
-      "subject": "Seth Green",
-      "observation": "Seth states he had interactions with Amanda leading up to her death, which places him in proximity during crucial events.",
-      "evidence": [
-        {
-          "document": "Seth Green (8-26-2011)_Redacted.pdf",
-          "quote": "I was getting ready to move into her house. She is not that close to her family."
-        }
-      ],
-      "follow_up_question": "What specific interactions did Seth have with Amanda prior to her death, and are there any other witnesses?"
+      "follow_up_question": "What were Dennis's movements after delivering the marijuana until the time the body was discovered?"
     },
     {
       "type": "physical_evidence_conflict",
       "subject": "Seth Green",
-      "observation": "Fingerprint evidence linked to the crime scene has been identified as belonging to Seth Green.",
+      "observation": "Seth Green's fingerprint was found at the crime scene.",
       "evidence": [
         {
           "document": "Crime Scene Services - MSP (10-18-2011).pdf",
-          "quote": "it was determined that friction ridge impression 2-10 was individualized to the left palm of Seth Green."
+          "quote": "it was determined that friction ridge impression 2-9 was individualized to the #8 left middle finger of Seth Green."
         }
       ],
-      "follow_up_question": "What context surrounds the collection and analysis of Seth's fingerprints at the crime scene?"
+      "follow_up_question": "What other evidence links Seth Green to the crime scene?"
     },
     {
-      "type": "physical_evidence_conflict",
-      "subject": "Dennis Rosa Roman",
-      "observation": "Dennis denies ever carrying weapons, but this claim may conflict with other evidence or statements.",
+      "type": "unverified_claim",
+      "subject": "Seth Green",
+      "observation": "Seth claims to have a knife that might have been left at Amanda's apartment.",
       "evidence": [
         {
-          "document": "Roman-Interview-part2.pdf",
-          "quote": "I've never had... I'm sorry, I'm scared about that."
+          "document": "Seth Green (8-26-2011)_Redacted.pdf",
+          "quote": "I think I have my knife at her house. It is a M Tech knife."
         }
       ],
-      "follow_up_question": "Is there any evidence directly related to weapon possession associated with Dennis?"
+      "follow_up_question": "Has the knife been found or authenticated by investigators?"
     }
   ],
   "conflicts": [
@@ -931,23 +837,44 @@
       "claims": [
         {
           "subject": "Dennis Rosa Roman",
-          "claim": "Claims innocence in the context of a murder investigation",
-          "quote": "I'm sorry. What I'm trying to do, listen, is to get you out of this. I'm trying to be nice with you.",
-          "context": "Dennis insists that he did not commit the murder and expresses distrust in the authorities.",
+          "claim": "Dennis claims innocence in a murder case",
+          "quote": "I'm sorry. What I'm trying to do is to get you out of this. I'm trying to be nice with you.",
+          "context": "Dennis expresses frustration over being treated like a suspect in a murder case.",
           "source": "booking.pdf"
         },
         {
           "subject": "Dennis Rosa Roman",
-          "claim": "Claims he may be targeted for murder",
-          "quote": "If I get killed, just know there's somebody cut off here.",
-          "context": "Dennis expresses fear for his life regarding potential consequences after the interview.",
+          "claim": "Dennis claims he is being wrongly accused",
+          "quote": "You guys have the wrong guy. You guys have the Nat Killer still out on the streets.",
+          "context": "Dennis asserts his innocence and that the real perpetrator is still at large.",
           "source": "booking.pdf"
         },
         {
           "subject": "Dennis Rosa Roman",
-          "claim": "Denies carrying weapons",
-          "quote": "I've never had... I'm sorry, I'm scared about that.",
-          "context": "In response to questions about carrying weapons.",
+          "claim": "Dennis expresses concern for his family's safety",
+          "quote": "If anybody gets hurt from my family, that's on you.",
+          "context": "Dennis warns the officers that if something happens to his family, they will be responsible.",
+          "source": "booking.pdf"
+        },
+        {
+          "subject": "Dennis Rosa Roman",
+          "claim": "Dennis describes a relationship with Amanda Plasse",
+          "quote": "I was there, obviously. I tried to save her.",
+          "context": "Dennis claims he attempted to help Amanda during the incident.",
+          "source": "booking.pdf"
+        },
+        {
+          "subject": "Dennis Rosa Roman",
+          "claim": "Dennis admits suicidal feelings",
+          "quote": "Yeah, I am suicidal actually. I am.",
+          "context": "Dennis shares his mental state during the interview.",
+          "source": "booking.pdf"
+        },
+        {
+          "subject": "Dennis Rosa Roman",
+          "claim": "He witnessed events related to Amanda's death and an interaction with a suspicious male.",
+          "quote": "The guy looked suspicious as hell.",
+          "context": "Describing the individual who took money from Amanda.",
           "source": "Roman-Interview-part2.pdf"
         }
       ],
@@ -958,94 +885,49 @@
       "description": "'Dennis Rosa Roman' is discussed in multiple documents with different claims"
     },
     {
-      "subject": "seth green",
+      "subject": "dennis",
       "type": "cross_document_claims",
       "claims": [
         {
-          "subject": "Seth Green",
-          "claim": "Describes his last interactions with Amanda and events leading to discovering her body.",
-          "quote": "I was getting ready to move into her house. She is not that close to her family.",
-          "context": "Seth talks about his relationship with Amanda and the circumstances of the day.",
-          "source": "Seth Green (8-26-2011)_Redacted.pdf"
+          "subject": "Dennis",
+          "claim": "Dennis claims he knew Amanda for about a week or two before her death.",
+          "quote": [
+            "I don't know if she knew him or not, or if that was an acquaintance of hers."
+          ],
+          "context": "Dennis discusses his interactions with Amanda leading up to her death.",
+          "source": "Roman-interview.pdf"
         },
         {
-          "subject": "Seth Green",
-          "claim": "Fingerprint evidence linked to the crime scene.",
-          "quote": "it was determined that friction ridge impression 2-10 was individualized to the left palm of Seth Green.",
-          "context": "Fingerprint analysis from the broken window.",
-          "source": "Crime Scene Services - MSP (10-18-2011).pdf"
-        }
-      ],
-      "sources": [
-        "Crime Scene Services - MSP (10-18-2011).pdf",
-        "Seth Green (8-26-2011)_Redacted.pdf"
-      ],
-      "description": "'Seth Green' is discussed in multiple documents with different claims"
-    },
-    {
-      "subject": "amanda",
-      "type": "cross_document_claims",
-      "claims": [
-        {
-          "subject": "Amanda",
-          "claim": "Reported Amanda was happy and had recently ended a bad relationship with her ex-boyfriend.",
-          "quote": "She said that her ex boyfriend was abusive.",
-          "context": "Context of Amanda's recent emotional state and relationship history.",
-          "source": "Seth Green (8-26-2011)_Redacted.pdf"
+          "subject": "Dennis",
+          "claim": "He delivered marijuana to Amanda on the day she was killed.",
+          "quote": [
+            "So the day of manager's kill, I went and bought her some weed."
+          ],
+          "context": "This claim was made while recounting his last interaction with Amanda.",
+          "source": "Roman-interview.pdf"
         },
         {
-          "subject": "Amanda",
-          "claim": "Seth describes finding Amanda's body and the condition it was in.",
-          "quote": "Her throat was slit twice.",
-          "context": "Seth recounting the traumatic moment of discovering Amanda.",
-          "source": "Seth Green (8-26-2011)_Redacted.pdf"
+          "subject": "Dennis",
+          "claim": "Dennis felt threatened by an unidentified individual related to the case.",
+          "quote": [
+            "I'm just terrified for my life. This is all I know."
+          ],
+          "context": "Dennis expresses fear while discussing sightings of a man he believes may be dangerous.",
+          "source": "Roman-interview.pdf"
         },
         {
-          "subject": "Amanda",
-          "claim": "Amanda was killed after asking for weed",
-          "quote": "She asked me if I could get her some weed.",
-          "context": "Dennis recounts his last interaction with Amanda.",
+          "subject": "Dennis",
+          "claim": "He was involved in multiple drug transactions with Amanda.",
+          "quote": "I got weed for her about three times. I am a fucking nice guy.",
+          "context": "Dennis asserts that he was helping Amanda out.",
           "source": "Roman-Interview-part2.pdf"
         }
       ],
       "sources": [
         "Roman-Interview-part2.pdf",
-        "Seth Green (8-26-2011)_Redacted.pdf"
+        "Roman-interview.pdf"
       ],
-      "description": "'Amanda' is discussed in multiple documents with different claims"
-    },
-    {
-      "claim_indices": [
-        3,
-        4
-      ],
-      "type": "inconsistency",
-      "severity": "medium",
-      "category": "story_change",
-      "same_event": "Dennis's interaction with Amanda on the day she was killed",
-      "claim1_says": "Dennis claims he delivered cannabis to Amanda.",
-      "claim2_says": "Dennis claims he had no contact with Amanda after the delivery.",
-      "investigative_note": "This inconsistency raises questions about the nature and extent of Dennis's interaction with Amanda on the day of her death, which is crucial to understanding his involvement.",
-      "claims": [
-        {
-          "subject": "Dennis",
-          "claim": "Dennis had no contact with Amanda after he delivered the weed.",
-          "quote": "I never stepped in her house. I've never seen the inside of her house.",
-          "context": "Dennis maintains he had no further interaction with Amanda after the delivery.",
-          "source": "Roman-interview.pdf"
-        },
-        {
-          "subject": "Seth Green",
-          "claim": "Describes his last interactions with Amanda and events leading to discovering her body.",
-          "quote": "I was getting ready to move into her house. She is not that close to her family.",
-          "context": "Seth talks about his relationship with Amanda and the circumstances of the day.",
-          "source": "Seth Green (8-26-2011)_Redacted.pdf"
-        }
-      ],
-      "sources": [
-        "Roman-interview.pdf",
-        "Seth Green (8-26-2011)_Redacted.pdf"
-      ]
+      "description": "'Dennis' is discussed in multiple documents with different claims"
     }
   ],
   "documents": [
@@ -1057,87 +939,79 @@
   ],
   "key_facts": [
     {
-      "fact": "Dennis was hit by a car in 2008 when he was 16 years old.",
+      "fact": "Dennis Rosa Roman is in custody.",
       "source": "booking.pdf"
     },
     {
-      "fact": "Dennis claims innocence regarding the murder investigation.",
+      "fact": "Dennis expressed suicidal thoughts during the interview.",
       "source": "booking.pdf"
     },
     {
-      "fact": "Dennis mentions that he is suicidal during the interview.",
+      "fact": "Dennis claims he was wrongly accused of murder.",
       "source": "booking.pdf"
     },
     {
-      "fact": "Dennis expresses concern about potential harm to his family.",
+      "fact": "Dennis attempted to contact his girlfriend during the interview.",
       "source": "booking.pdf"
     },
     {
-      "fact": "Dennis claims he was in contact with Amanda Ploss shortly before her death.",
+      "fact": "Dennis knew Amanda for about a week or two before her death.",
       "source": "Roman-interview.pdf"
     },
     {
-      "fact": "The conversation Dennis overheard hinted at a drug transaction.",
+      "fact": "Dennis delivered marijuana to Amanda the day she was killed.",
       "source": "Roman-interview.pdf"
     },
     {
-      "fact": "Dennis has expressed fear of his safety after witnessing suspicious activity.",
+      "fact": "Dennis expressed fear for his safety related to a man he has seen associated with the case.",
       "source": "Roman-interview.pdf"
     },
     {
-      "fact": "Seth Green met Amanda Plasse a week before her death.",
+      "fact": "Seth and Amanda spent every day together for a week.",
       "source": "Seth Green (8-26-2011)_Redacted.pdf"
     },
     {
-      "fact": "Amanda worked at Friendly's and was supposed to be at work at 5:00.",
+      "fact": "Amanda was scheduled to work at Friendly's on the night of her death.",
       "source": "Seth Green (8-26-2011)_Redacted.pdf"
     },
     {
-      "fact": "Seth has a cut on his hand from work days before the statement.",
+      "fact": "Seth worked as a roofer and mentioned he was working on a job site on the day of the incident.",
       "source": "Seth Green (8-26-2011)_Redacted.pdf"
     },
     {
-      "fact": "Amanda was reported to have had about $250 in cash before her death.",
+      "fact": "Amanda was 20 years old and had been living independently since age 17.",
       "source": "Seth Green (8-26-2011)_Redacted.pdf"
     },
     {
-      "fact": "Seth called 911 immediately after finding Amanda's body.",
+      "fact": "Amanda had around $250 in cash from tips on the night of her death.",
       "source": "Seth Green (8-26-2011)_Redacted.pdf"
     },
     {
-      "fact": "The victim, Amanda Lynn Plasse, was found deceased on August 26, 2011.",
+      "fact": "Seth's vehicle was a tan 1986 Ford Mustang.",
+      "source": "Seth Green (8-26-2011)_Redacted.pdf"
+    },
+    {
+      "fact": "On August 26, 2011, a homicide occurred in Chicopee.",
       "source": "Crime Scene Services - MSP (10-18-2011).pdf"
     },
     {
-      "fact": "The suspects in the case include Seth Green and Jessie M. Coulombe.",
+      "fact": "The victim, Amanda Lynn Plasse, had multiple injuries consistent with an edged weapon.",
       "source": "Crime Scene Services - MSP (10-18-2011).pdf"
     },
     {
-      "fact": "Evidence including fingerprints and footwear impressions were processed by the crime scene unit.",
+      "fact": "Seth Green's fingerprints were found at the crime scene.",
       "source": "Crime Scene Services - MSP (10-18-2011).pdf"
     },
     {
-      "fact": "The incident occurred at 73 School St., Apartment 3R, in Chicopee.",
-      "source": "Crime Scene Services - MSP (10-18-2011).pdf"
-    },
-    {
-      "fact": "Trooper Todd R. Girouard prepared the report on 10/18/11.",
-      "source": "Crime Scene Services - MSP (10-18-2011).pdf"
-    },
-    {
-      "fact": "Dennis Rosa Roman provided a statement on November 1, 2013.",
+      "fact": "Dennis Rosa Roman provided a statement to law enforcement regarding Amanda's death.",
       "source": "Roman-Interview-part2.pdf"
     },
     {
-      "fact": "He mentioned an incident where Crystal stabbed him with a butter knife.",
+      "fact": "Dennis's last contact with Amanda occurred before her death",
       "source": "Roman-Interview-part2.pdf"
     },
     {
-      "fact": "Dennis was involved in purchasing weed for Amanda shortly before her death.",
-      "source": "Roman-Interview-part2.pdf"
-    },
-    {
-      "fact": "He described a suspicious individual present at the scene of Amanda's murder.",
+      "fact": "Dennis was involved in drug transactions with Amanda and her friend Crystal.",
       "source": "Roman-Interview-part2.pdf"
     }
   ]

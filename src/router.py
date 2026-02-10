@@ -192,6 +192,126 @@ def get_people_connected_to_victim(data: dict, victim_name: str) -> List[dict]:
 
 
 # ============================================================================
+# SPECULATIVE QUERY DETECTION AND DEFLECTION
+# ============================================================================
+
+# Patterns for speculative questions that ask about motives, reasons, or who benefits
+SPECULATIVE_QUERY_PATTERNS = [
+    # "Who benefits" variations
+    r'\bwho\s+benefit',
+    r'\bwho\s+gains?\b',
+    r'\bcui\s+bono\b',
+    r'\bwho\s+profits?\b',
+    r'\bwho\s+had\s+(?:a\s+)?motive',
+    r'\bwho\s+stood\s+to\s+gain\b',
+    r'\bwho\s+stands?\s+to\s+gain\b',
+    r'\bwho\s+would\s+benefit\b',
+    r'\bwho\s+benefits?\s+from\b',
+    r'\bwho\s+gained\s+from\b',
+    r'\bbeneficiary\b.*\b(?:who|list)\b',
+    # "Why was X killed/murdered" variations
+    r'\bwhy\s+was\s+\w+\s+killed\b',
+    r'\bwhy\s+was\s+\w+\s+murdered\b',
+    r'\bwhy\s+did\s+\w+\s+(?:die|get\s+killed|get\s+murdered)\b',
+    r'\bwhy\s+(?:the\s+)?(?:murder|killing|death|crime)\b',
+    r'\breason\s+(?:for|behind)\s+(?:the\s+)?(?:murder|killing|death|crime)\b',
+    r'\bmotive\s+(?:for|behind)\s+(?:the\s+)?(?:murder|killing|death|crime)\b',
+    r'\bwhat\s+(?:is|was)\s+the\s+motive\b',
+    r'\bwhy\s+would\s+(?:someone|anyone)\s+(?:kill|murder|want\s+.+\s+dead)\b',
+]
+
+SPECULATIVE_DEFLECTION_RESPONSE = """## Query Outside System Scope
+
+I'm designed to help investigators **find and organize factual evidence** from documents — not to speculate about motives or reasons behind crimes.
+
+### Why I Can't Answer This
+
+Questions like "Who benefits from the crime?" or "Why was [person] killed?" require:
+
+- **Speculation about intent** — which is outside the scope of documentary evidence
+- **Inference about motive** — which can lead to confirmation bias
+- **Assumptions about relationships** — that may not be supported by facts
+
+Even if financial or relational connections exist in the documents, **inferring motive from those connections is the investigator's job**, not mine.
+
+### What I Can Help With Instead
+
+Try asking factual questions:
+
+- **Financial relationships**: "What insurance policies are mentioned?" / "Who is listed as a beneficiary?"
+- **Conflicts and arguments**: "Were there any documented disputes involving [person]?"
+- **Relationships**: "What is the relationship between [person A] and [person B]?"
+- **Timeline**: "Who was the last person to see [victim] alive?"
+- **Statements**: "What did [person] say about [topic]?"
+
+### Why This Matters
+
+Drawing conclusions about who benefited or why someone was killed from documentary evidence alone can:
+
+- Introduce bias into the investigation
+- Lead to tunnel vision on certain suspects
+- Miss alternative explanations
+
+My role is to help you **find facts** — the conclusions are yours to draw.
+
+---
+
+*Rephrase your question to ask about specific facts, statements, or documented relationships.*"""
+
+
+def is_speculative_query(question: str) -> bool:
+    """
+    Detect if a question is asking speculative questions about motive,
+    who benefits, or reasons behind crimes.
+    
+    These queries are deflected because they ask for inference/speculation
+    rather than factual retrieval.
+    
+    Args:
+        question: The user's question
+        
+    Returns:
+        True if the query is speculative (should be deflected)
+    """
+    question_lower = question.lower().strip()
+    
+    for pattern in SPECULATIVE_QUERY_PATTERNS:
+        if re.search(pattern, question_lower):
+            return True
+    
+    # Simple phrase matching for common variations
+    speculative_phrases = [
+        "who benefits",
+        "who benefited",
+        "who would benefit",
+        "who stands to gain",
+        "who stood to gain",
+        "why was she killed",
+        "why was he killed",
+        "why were they killed",
+        "why the murder",
+        "why the killing",
+        "what was the motive",
+        "what is the motive",
+        "reason for the murder",
+        "reason for the killing",
+    ]
+    
+    for phrase in speculative_phrases:
+        if phrase in question_lower:
+            return True
+    
+    return False
+
+
+def get_speculative_deflection_response() -> str:
+    """
+    Return the standard deflection response for speculative queries.
+    """
+    return SPECULATIVE_DEFLECTION_RESPONSE
+
+
+# ============================================================================
 # GUILT QUERY DETECTION AND DEFLECTION
 # ============================================================================
 
@@ -301,6 +421,116 @@ def get_guilt_deflection_response() -> str:
     return GUILT_DEFLECTION_RESPONSE
 
 
+# ============================================================================
+# FOLLOW-UP QUESTION QUERY DETECTION
+# ============================================================================
+
+FOLLOW_UP_QUERY_PATTERNS = [
+    r'\bfollow[\s-]?up\s+questions?\s+(?:for|about)\b',
+    r'\bgenerate\s+.*\bquestions?\s+(?:for|about)\b',
+    r'\bwhat\s+(?:questions?|should\s+(?:i|we))\s+ask\b',
+    r'\binterview\s+questions?\s+(?:for|about)\b',
+    r'\bquestions?\s+(?:to|i\s+should|we\s+should)\s+ask\b',
+    r'\bwhat\s+(?:else\s+)?(?:should|can|could)\s+(?:i|we)\s+ask\b',
+    r'\bprepare\s+questions?\s+(?:for|about)\b',
+    r'\bquestions?\s+(?:for|to)\s+(?:the\s+)?(?:next\s+)?interview\b',
+]
+
+FOLLOW_UP_QUERY_PHRASES = [
+    "follow up questions",
+    "follow-up questions",
+    "followup questions",
+    "questions to ask",
+    "questions for",
+    "interview questions",
+    "what should i ask",
+    "what should we ask",
+    "what questions",
+    "generate questions",
+    "list of questions",
+]
+
+
+def is_follow_up_query(question: str) -> bool:
+    """
+    Detect if a question is asking for follow-up/interview questions for a person.
+    
+    Args:
+        question: The user's question
+        
+    Returns:
+        True if the query is asking for follow-up questions
+    """
+    question_lower = question.lower().strip()
+    
+    # Check regex patterns
+    for pattern in FOLLOW_UP_QUERY_PATTERNS:
+        if re.search(pattern, question_lower):
+            return True
+    
+    # Check simple phrases
+    for phrase in FOLLOW_UP_QUERY_PHRASES:
+        if phrase in question_lower:
+            return True
+    
+    return False
+
+
+def extract_target_person_for_follow_up(question: str, entities: List[dict]) -> Optional[dict]:
+    """
+    Extract the target person from a follow-up question query.
+    
+    Args:
+        question: The user's question (e.g., "generate follow-up questions for Dennis")
+        entities: List of entity dicts from extracted data
+        
+    Returns:
+        The matching entity dict if found, None otherwise
+    """
+    # Filter to person entities only
+    person_entities = [e for e in entities if e.get("type", "").lower() == "person"]
+    
+    if not person_entities:
+        return None
+    
+    # First, try extracting capitalized names from the question
+    potential_names = _extract_potential_names(question)
+    
+    if potential_names:
+        matches = _find_matching_entities(potential_names, person_entities)
+        if matches:
+            return matches[0]
+    
+    # Fallback: Search for any person entity name mentioned in the question (case-insensitive)
+    # This handles cases like "questions for dennis" where dennis is lowercase
+    question_lower = question.lower()
+    
+    best_match = None
+    best_match_score = 0
+    
+    for entity in person_entities:
+        entity_name = entity.get("name", "")
+        entity_name_lower = entity_name.lower()
+        
+        # Check if any part of the entity name appears in the question
+        name_parts = entity_name_lower.split()
+        
+        for part in name_parts:
+            if len(part) >= 3 and part in question_lower:  # Minimum 3 chars to avoid false positives
+                # Score by how much of the name matches
+                score = len(part)
+                if score > best_match_score:
+                    best_match = entity
+                    best_match_score = score
+        
+        # Also check full name match
+        if entity_name_lower in question_lower:
+            # Full name match is highest priority
+            return entity
+    
+    return best_match
+
+
 def _synthesize_response(
     client: OpenAI,
     model: str,
@@ -342,7 +572,7 @@ For each person with potential financial benefit:
 - Quote the supporting evidence
 - Note the source
 
-If no financial benefit evidence: Say "No documented financial beneficiaries or debt relationships found."
+If no financial benefit evidence: Say "No documented financial beneficiaries or debt relationships found in the documents you provided."
 
 ### Practical Benefit
 Analyze documented evidence of who might gain practically:
@@ -356,7 +586,7 @@ For each person with potential practical benefit:
 - Quote the supporting evidence
 - Note the source
 
-If no practical benefit evidence: Say "No documented conflicts or strategic relationships found."
+If no practical benefit evidence: Say "No documented conflicts or strategic relationships found in the documents you provided."
 
 ### Emotional/Relational Benefit
 Analyze documented evidence of emotional dynamics:
@@ -370,7 +600,7 @@ For each person with potential emotional benefit:
 - Quote the supporting evidence (statements about anger, jealousy, conflicts)
 - Note the source
 
-If no emotional benefit evidence: Say "No documented emotional conflicts found."
+If no emotional benefit evidence: Say "No documented emotional conflicts found in the documents you provided."
 
 CRITICAL RULES:
 
@@ -380,7 +610,11 @@ CRITICAL RULES:
    - SAY: "Documents show X and victim had a romantic conflict..."
    - NOT: "X was jealous and had motive..."
 4. **Present All Connected People:** Even if their benefit is unclear, note their documented relationship to the victim
-5. **Note Gaps:** If a category has no evidence, explicitly state this - it's useful information
+5. **Note Gaps:** If a category has no evidence in the documents you provided, explicitly state this - it's useful information
+6. **INTERVIEW STATEMENTS ARE NOT FACTS:** When citing interview content, use hedging language:
+   - "According to [Person]'s statement..." NOT "The fact is..."
+   - "[Person] claimed..." NOT "[Person] did..."
+   - People lie, misremember, and protect themselves - their statements are claims, not verified truth
 
 The disclaimer at the end is pre-included - do not add another one.
 
@@ -437,6 +671,14 @@ ATTRIBUTION REQUIREMENTS:
 - State what each person said, not what happened: "[Person] stated..." not "[Person] was..."
 - Distinguish between verified facts and claims made by individuals
 - When accounts conflict, present both versions with their sources
+
+INTERVIEW STATEMENTS ARE NOT FACTS (CRITICAL):
+Just because someone said something in an interview does NOT mean it happened. People lie, misremember, have biases, and protect themselves or others.
+- ALWAYS hedge interview content: "[Person] stated..." or "According to [Person]'s account..."
+- "X stated they were at the store" NOT "X was at the store"
+- "X claimed to have seen Y" NOT "X saw Y"
+- When someone describes their own alibi, explicitly note this is THEIR CLAIM
+- Only physical evidence (forensics, photos) can be stated as direct fact
 
 ANTI-HALLUCINATION RULES:
 - Include ONLY facts from the extracted data
@@ -512,9 +754,26 @@ REASONING REQUIREMENTS:
 - If you connected multiple pieces of information, explain those connections
 - If you made any inferences, explicitly state them and justify with evidence
 
+DEDUCTIVE REASONING (REQUIRED):
+You MUST perform evidence-constrained deduction when partial information can be cross-referenced.
+
+When evidence provides partial identifying information (e.g., "name starts with D", physical description, location access):
+1. STATE THE CONSTRAINT: What partial information do we have?
+2. ENUMERATE POSSIBILITIES: List ALL entities in the data that match the constraint
+3. APPLY LOGICAL ELIMINATION: For each possibility, evaluate likelihood based on documented context
+4. STATE CONCLUSION: "Based on this evidence, [Name] is the most likely candidate" or "This narrows to [names]"
+
+Example - CORRECT approach:
+> The name on the whiteboard "begins with a D" (Jesse Columbe). Cross-referencing all names:
+> - Dennis Rosa Roman - delivered marijuana to Amanda, documented at her apartment
+> - Dorcas Ortiz - Dennis's mother, no documented presence at apartment
+> Dennis is the only "D" name with documented connection to the break-in context.
+
+This is NOT speculation - it's evidence-constrained deduction using only facts from the documents.
+
 CRITICAL ANTI-HALLUCINATION RULES:
 - ONLY include information that appears in the extracted data provided
-- If someone asks about a person/entity NOT in the data, say "No information found about [name] in the documents"
+- If someone asks about a person/entity NOT in the data, say "No information found about [name] in the documents you provided"
 - NEVER invent names, dates, facts, or relationships not explicitly in the data
 - If the extracted data is empty or doesn't contain relevant information, say so clearly
 - Do not fill gaps with assumptions or general knowledge
@@ -527,6 +786,18 @@ INVESTIGATIVE OBJECTIVITY (CRITICAL):
 - If a document explicitly labels someone, quote the label and cite the source document
 - Present facts objectively without prejudging guilt, innocence, or involvement
 - Let the investigator draw their own conclusions about roles and culpability
+
+INTERVIEW STATEMENTS ARE NOT FACTS (CRITICAL):
+Just because someone said something in an interview does NOT mean it happened. People lie, misremember, have biases, and protect themselves or others.
+
+- ALWAYS hedge interview content: "[Person] stated..." or "According to [Person]'s account..." - NEVER present as fact
+- "X stated they were at the store" NOT "X was at the store"
+- "X claimed to have seen Y" NOT "X saw Y"
+- "According to X, they gave Y $50" NOT "X gave Y $50"
+- When someone describes their own alibi or whereabouts, explicitly note this is THEIR CLAIM, not verified fact
+- If multiple people's accounts differ, present BOTH as claims without favoring either
+- Only physical evidence and official records (forensics, phone records, surveillance) can be stated more directly
+- Add "(unverified)" or "(according to their interview)" when summarizing interview content
 
 PROHIBITED META-COMMENTARY:
 - NEVER mention internal system processes: "identified X entities", "extracted Y claims", "documented Z events"
@@ -695,6 +966,38 @@ def _find_matching_entities(names: List[str], entities: List[dict]) -> List[dict
     return matches
 
 
+def _extract_letter_filter(question: str) -> Optional[str]:
+    """
+    Extract letter filter from questions like "names starting with D" or "beginning with A".
+    
+    Returns the uppercase letter if found, None otherwise.
+    """
+    # Strip all non-alphanumeric characters except spaces for simpler matching
+    # This handles all quote variations (curly, straight, etc.)
+    cleaned = ''.join(c if c.isalnum() or c.isspace() else ' ' for c in question.lower())
+    # Collapse multiple spaces
+    cleaned = ' '.join(cleaned.split())
+    
+    # Patterns for letter filtering - simpler patterns after cleaning
+    letter_patterns = [
+        # "starting with D" or "beginning with D" or "starts with D"
+        r'(?:start|starting|starts|begin|beginning|begins)\s+with\s+(?:a\s+)?(?:the\s+letter\s+)?([a-z])\b',
+        # "names that start with D"
+        r'names?\s+(?:that\s+)?(?:start|begin)s?\s+with\s+([a-z])\b',
+        # "names with letter D"
+        r'names?\s+with\s+(?:letter\s+)?([a-z])\b',
+    ]
+    
+    for pattern in letter_patterns:
+        match = re.search(pattern, cleaned)
+        if match:
+            letter = match.group(1).upper()
+            print(f"DEBUG: Extracted letter filter '{letter}' from question: {question[:50]}...")
+            return letter
+    
+    return None
+
+
 def _is_entity_lookup_query(question: str) -> bool:
     """
     Determine if a question is primarily an entity lookup.
@@ -733,6 +1036,13 @@ def _is_comprehensive_query(question: str) -> bool:
     """
     question_lower = question.lower().strip()
     
+    # Check for letter-filter queries like "names starting with D" - these need knowledge graph
+    letter_filter = _extract_letter_filter(question)
+    print(f"_is_comprehensive_query: letter_filter = {letter_filter}")
+    if letter_filter:
+        print(f"_is_comprehensive_query: -> True (letter filter detected)")
+        return True
+    
     comprehensive_keywords = [
         "all ", "every ", "list ", "find all", "show all", "give me all",
         "inconsistencies", "contradictions", "conflicts", "discrepancies",
@@ -754,6 +1064,8 @@ def _is_comprehensive_query(question: str) -> bool:
         "investigative notes", "follow up", "follow-up",
         "what should we investigate", "what to investigate",
         "observations", "factual observations",
+        # Names queries
+        "what names", "which names",
     ]
     
     for keyword in comprehensive_keywords:
@@ -820,16 +1132,26 @@ def classify_query(question: str, extracted_data: dict = None) -> str:
     5. Default → SPECIFIC (CoA handles uncertainty well)
     """
     question_lower = question.lower().strip()
+    print(f"CLASSIFY_QUERY: Processing '{question[:60]}...'")
+    
+    # 0. Follow-up question queries go to knowledge graph (need all evidence about a person)
+    if is_follow_up_query(question):
+        print(f"CLASSIFY_QUERY: -> EXHAUSTIVE (follow_up_query)")
+        return "EXHAUSTIVE"
     
     # 1. Motive/benefit queries go to knowledge graph (financial relationships)
     if is_motive_query(question):
+        print(f"CLASSIFY_QUERY: -> EXHAUSTIVE (motive_query)")
         return "EXHAUSTIVE"
     
     # 2. Comprehensive queries always go to knowledge graph
-    if _is_comprehensive_query(question):
+    is_comprehensive = _is_comprehensive_query(question)
+    print(f"CLASSIFY_QUERY: _is_comprehensive_query returned {is_comprehensive}")
+    if is_comprehensive:
+        print(f"CLASSIFY_QUERY: -> EXHAUSTIVE (comprehensive_query)")
         return "EXHAUSTIVE"
     
-    # 2. Check for entity lookup patterns
+    # 3. Check for entity lookup patterns
     if _is_entity_lookup_query(question):
         # Load extracted data if not provided
         if extracted_data is None:
@@ -869,11 +1191,15 @@ def get_query_category(question: str, extracted_data: dict = None) -> str:
     """
     Get more detailed category for exhaustive queries to determine response type.
     
-    Returns: "conflicts", "entities", "events", "relationships", "investigative_notes", "motive", "summary", or "general"
+    Returns: "follow_up_questions", "conflicts", "entities", "events", "relationships", "investigative_notes", "motive", "summary", or "general"
     """
     question_lower = question.lower()
     
-    # Check for motive/benefit queries FIRST (before other patterns)
+    # Check for follow-up question queries FIRST
+    if is_follow_up_query(question):
+        return "follow_up_questions"
+    
+    # Check for motive/benefit queries (before other patterns)
     if is_motive_query(question):
         return "motive"
     
@@ -885,12 +1211,14 @@ def get_query_category(question: str, extracted_data: dict = None) -> str:
         "relationship", "relationships", "connected", "connection", 
         "know each other", "related to", "who knows", "associated with",
         "friends with", "family", "boyfriend", "girlfriend", "spouse",
-        "coworker", "between"
+        "coworker", "between", "related", "connections", "links", "linked"
     ]
     # More specific patterns for relationships
     if any(kw in question_lower for kw in relationship_keywords):
         # Make sure it's asking about relationships between people, not just using the word
-        if any(p in question_lower for p in ["between", "who knows", "connected", "relationship"]):
+        if any(p in question_lower for p in ["between", "who knows", "connected", "relationship", 
+                                              "related", "entities", "people", "everyone",
+                                              "all the", "connections", "links"]):
             return "relationships"
     
     # Check for investigative notes queries
@@ -958,6 +1286,10 @@ def answer_exhaustive_query(
     
     category = get_query_category(question, extracted_data)
     
+    # Follow-up questions handle their own LLM synthesis
+    if category == "follow_up_questions":
+        return _answer_follow_up_query(question, extracted_data, client, model)
+    
     # Generate template-based response
     if category == "conflicts":
         raw_response, success = _answer_conflicts_query(extracted_data)
@@ -977,7 +1309,14 @@ def answer_exhaustive_query(
         raw_response, success = _answer_general_exhaustive(question, extracted_data)
     
     # If client provided, synthesize a natural response
+    # BUT skip synthesis for letter-filter queries since templates are already well-formatted
+    # and LLM synthesis tends to corrupt the factual output
     if client and model and success:
+        # Check if this is a letter-filter query - if so, skip synthesis
+        if _extract_letter_filter(question):
+            print(f"DEBUG: Skipping LLM synthesis for letter-filter query")
+            return (raw_response, True)
+        
         synthesized = _synthesize_response(client, model, question, raw_response, category)
         return (synthesized, True)
     
@@ -1084,7 +1423,7 @@ def _answer_conflicts_query(data: dict) -> Tuple[str, bool]:
             response += "---\n\n"
     
     if not high_severity and not medium_severity:
-        response += "_No contradictions or notable inconsistencies found in the statements._\n\n"
+        response += "_No contradictions or notable inconsistencies found in the statements in the documents you provided._\n\n"
     
     # Note: cross_doc_claims are filtered out but NOT displayed here
     # Being mentioned in multiple documents is not a contradiction - it's expected
@@ -1107,24 +1446,28 @@ def _answer_entities_query(question: str, data: dict) -> Tuple[str, bool]:
     claims = data.get("claims", [])
     question_lower = question.lower()
     
-    # First, check if this is a specific entity lookup
-    potential_names = _extract_potential_names(question)
-    if potential_names:
-        matching_entities = _find_matching_entities(potential_names, entities)
-        
-        if matching_entities:
-            return _answer_specific_entity_query(question, matching_entities, claims, data)
-        else:
-            # Names were mentioned but NOT found in documents - fail gracefully
-            names_str = ", ".join(f'"{name}"' for name in potential_names)
-            return (
-                f"## No Information Found\n\n"
-                f"I searched the documents but could not find any information about {names_str}.\n\n"
-                f"The following people ARE mentioned in the documents:\n\n" +
-                "\n".join(f"- **{e.get('name')}**" for e in entities if e.get('type', '').lower() == 'person')[:15] +
-                "\n\n*If you're looking for someone specific, please check the spelling or try a different name.*",
-                True
-            )
+    # Check for letter-based filtering FIRST (e.g., "names starting with D")
+    letter_filter = _extract_letter_filter(question)
+    
+    # First, check if this is a specific entity lookup (but not if we have a letter filter)
+    if not letter_filter:
+        potential_names = _extract_potential_names(question)
+        if potential_names:
+            matching_entities = _find_matching_entities(potential_names, entities)
+            
+            if matching_entities:
+                return _answer_specific_entity_query(question, matching_entities, claims, data)
+            else:
+                # Names were mentioned but NOT found in documents - fail gracefully
+                names_str = ", ".join(f'"{name}"' for name in potential_names)
+                return (
+                    f"## No Information Found in Provided Documents\n\n"
+                    f"I searched the documents you provided but could not find any information about {names_str}.\n\n"
+                    f"The following people ARE mentioned in the documents you provided:\n\n" +
+                    "\n".join(f"- **{e.get('name')}**" for e in entities if e.get('type', '').lower() == 'person')[:15] +
+                    "\n\n*If you're looking for someone specific, please check the spelling or try a different name.*",
+                    True
+                )
     
     # Otherwise, handle as a listing query
     # Filter by type if specified
@@ -1144,8 +1487,28 @@ def _answer_entities_query(question: str, data: dict) -> Tuple[str, bool]:
         filtered = entities
         entity_type = "Entities"
     
+    # Apply letter filter if present (e.g., "names starting with D")
+    if letter_filter:
+        print(f"DEBUG: Applying letter filter '{letter_filter}' to {len(filtered)} entities")
+        before_count = len(filtered)
+        filtered = [e for e in filtered if e.get("name", "").upper().startswith(letter_filter)]
+        print(f"DEBUG: After filter: {len(filtered)} entities match (names: {[e.get('name') for e in filtered[:5]]})")
+        
+        if not filtered:
+            # No entities match the letter filter - this shouldn't happen for common letters
+            all_people = [e for e in entities if e.get("type", "").lower() == "person"]
+            print(f"DEBUG: No matches found. All people: {[e.get('name') for e in all_people[:10]]}")
+            return (
+                f"## No Names Starting with \"{letter_filter}\" Found\n\n"
+                f"I searched the documents but found no people whose names start with \"{letter_filter}\".\n\n"
+                f"**People mentioned in the documents:**\n\n" +
+                "\n".join(f"- **{e.get('name')}**" for e in all_people[:15]) +
+                "\n\n*If you're looking for a partial name or nickname, try searching for the specific text.*",
+                True
+            )
+    
     if not filtered:
-        return (f"No {entity_type.lower()} were identified in the documents.", True)
+        return (f"No {entity_type.lower()} were identified in the documents you provided.", True)
     
     # Deduplicate by name (case-insensitive)
     seen_names = set()
@@ -1156,13 +1519,20 @@ def _answer_entities_query(question: str, data: dict) -> Tuple[str, bool]:
             seen_names.add(name_lower)
             unique_entities.append(e)
     
-    response = f"## {entity_type} Mentioned in Documents\n\n"
+    # Build response header
+    if letter_filter:
+        response = f"## Names Starting with \"{letter_filter}\"\n\n"
+    else:
+        response = f"## {entity_type} Mentioned in Documents\n\n"
     
     # Add disclaimer for role-based queries
     if role_based_query:
         response += "_**Note:** This system does not assume or assign investigative roles (suspect, witness, victim). The following is a list of all people mentioned in the documents. Any role designations shown are direct quotes from the source documents, not conclusions drawn by this system._\n\n"
     
-    response += f"Found **{len(unique_entities)}** unique {entity_type.lower()}:\n\n"
+    if letter_filter:
+        response += f"Found **{len(unique_entities)}** name(s) starting with \"{letter_filter}\":\n\n"
+    else:
+        response += f"Found **{len(unique_entities)}** unique {entity_type.lower()}:\n\n"
     
     # Clean numbered list format
     for idx, entity in enumerate(unique_entities, 1):
@@ -1301,7 +1671,7 @@ def _answer_specific_entity_query(
                 response += f"*Source: {source}*\n\n---\n\n"
     
     if not response:
-        return ("No information found for the specified entity.", False)
+        return ("No information found for the specified entity in the documents you provided.", False)
     
     return (response, True)
 
@@ -1312,7 +1682,7 @@ def _answer_events_query(data: dict) -> Tuple[str, bool]:
     events = data.get("events", [])
     
     if not events:
-        return ("No dated events were identified in the documents.", True)
+        return ("No dated events were identified in the documents you provided.", True)
     
     # Sort by date if possible
     def sort_key(e):
@@ -1460,8 +1830,8 @@ def _answer_relationships_query(question: str, data: dict) -> Tuple[str, bool]:
             return (response, True)
         else:
             return (
-                f"## No Relationships Found\n\n"
-                f"No relationships involving {', '.join(potential_names)} were found in the documents.\n\n"
+                f"## No Relationships Found in Provided Documents\n\n"
+                f"No relationships involving {', '.join(potential_names)} were found in the documents you provided.\n\n"
                 f"**Available relationships involve:** " + 
                 ", ".join(set(r.get("person1", "") for r in relationships[:10])) +
                 "\n\n*Try asking about one of these people instead.*",
@@ -1799,6 +2169,420 @@ def _answer_motive_query(question: str, data: dict) -> Tuple[str, bool]:
     response += "\n\n" + MOTIVE_DISCLAIMER
     
     return (response, True)
+
+
+def _build_evidence_context(person_name: str, data: dict) -> dict:
+    """
+    Build comprehensive evidence context for a specific person.
+    
+    Gathers all evidence related to this person for follow-up question generation:
+    - Their own claims and statements
+    - Physical/forensic evidence from the case
+    - Other people's statements that mention them
+    - Timeline of events they were involved in
+    - Conflicts involving their statements
+    - Key facts from the case
+    
+    Args:
+        person_name: Name of the target person
+        data: Extracted data dictionary
+        
+    Returns:
+        Dictionary with categorized evidence context
+    """
+    from collections import defaultdict
+    
+    person_normalized = _normalize_for_matching(person_name)
+    person_words = set(person_normalized.split())
+    
+    context = {
+        "target_person": person_name,
+        "subject_claims": [],
+        "subject_quotes": [],
+        "physical_evidence": [],
+        "third_party_mentions": [],
+        "subject_timeline": [],
+        "overlapping_timelines": [],
+        "conflicts": [],
+        "case_facts": [],
+        "relationships": [],
+        "documents_analyzed": set()
+    }
+    
+    claims = data.get("claims", [])
+    events = data.get("events", [])
+    entities = data.get("entities", [])
+    relationships = data.get("relationships", [])
+    conflicts = data.get("conflicts", [])
+    key_facts = data.get("key_facts", [])
+    
+    # Helper to check if text matches person
+    def matches_person(text: str) -> bool:
+        text_normalized = _normalize_for_matching(text)
+        text_words = set(text_normalized.split())
+        return (person_normalized in text_normalized or 
+                text_normalized in person_normalized or
+                bool(person_words & text_words))
+    
+    # 1. Gather the person's own claims and quotes
+    for claim in claims:
+        subject = claim.get("subject", "")
+        if matches_person(subject):
+            context["subject_claims"].append(claim)
+            
+            # Extract quotes
+            quote = claim.get("quote", "")
+            if quote:
+                quote_text = quote if isinstance(quote, str) else (quote[0] if quote else "")
+                if quote_text:
+                    context["subject_quotes"].append({
+                        "quote": quote_text,
+                        "claim": claim.get("claim", ""),
+                        "source": claim.get("source", "Unknown")
+                    })
+            
+            # Track documents
+            source = claim.get("source", "")
+            if source:
+                context["documents_analyzed"].add(source)
+    
+    # 2. Find claims where OTHER people mention this person (third party)
+    for claim in claims:
+        subject = claim.get("subject", "")
+        claim_text = claim.get("claim", "").lower()
+        quote = claim.get("quote", "")
+        quote_text = quote if isinstance(quote, str) else (quote[0] if quote else "")
+        
+        # Skip if this is the person's own claim
+        if matches_person(subject):
+            continue
+        
+        # Check if person is mentioned in the claim or quote
+        if (matches_person(claim_text) or 
+            (quote_text and matches_person(quote_text))):
+            context["third_party_mentions"].append(claim)
+    
+    # 3. Gather events involving the person (their timeline)
+    for event in events:
+        people_involved = event.get("people_involved", [])
+        description = event.get("description", "")
+        
+        person_involved = any(matches_person(p) for p in people_involved)
+        mentioned_in_desc = matches_person(description)
+        
+        if person_involved or mentioned_in_desc:
+            context["subject_timeline"].append(event)
+            source = event.get("source", "")
+            if source:
+                context["documents_analyzed"].add(source)
+    
+    # 4. Find overlapping events (same time period, different people)
+    # Get time references from subject's timeline
+    subject_times = set()
+    for event in context["subject_timeline"]:
+        date = event.get("date", "")
+        if date and date.lower() != "unknown":
+            subject_times.add(date.lower())
+    
+    # Find other events at similar times
+    for event in events:
+        if event in context["subject_timeline"]:
+            continue
+        date = event.get("date", "")
+        if date and date.lower() in subject_times:
+            context["overlapping_timelines"].append(event)
+    
+    # 5. Gather conflicts involving the person
+    for conflict in conflicts:
+        conflict_claims = conflict.get("claims", [])
+        subject = conflict.get("subject", "")
+        
+        if matches_person(subject):
+            context["conflicts"].append(conflict)
+            continue
+        
+        # Check if person is mentioned in any of the conflict claims
+        for claim in conflict_claims:
+            claim_subject = claim.get("subject", "")
+            if matches_person(claim_subject):
+                context["conflicts"].append(conflict)
+                break
+    
+    # 6. Gather relationships involving the person
+    for rel in relationships:
+        p1 = rel.get("person1", "")
+        p2 = rel.get("person2", "")
+        if matches_person(p1) or matches_person(p2):
+            context["relationships"].append(rel)
+    
+    # 7. Gather physical evidence and key facts
+    # Look for forensic/physical evidence in entities
+    for entity in entities:
+        entity_type = entity.get("type", "").lower()
+        description = entity.get("description", "").lower()
+        
+        # Check for evidence-related entities
+        evidence_keywords = ["evidence", "fingerprint", "dna", "weapon", "knife", 
+                           "blood", "forensic", "crime scene", "autopsy"]
+        if any(kw in entity_type or kw in description for kw in evidence_keywords):
+            context["physical_evidence"].append(entity)
+    
+    # Key facts
+    for fact in key_facts:
+        if isinstance(fact, dict):
+            fact_text = fact.get("fact", "")
+            context["case_facts"].append(fact)
+        else:
+            context["case_facts"].append({"fact": str(fact), "source": "Unknown"})
+    
+    # Convert set to list for JSON serialization
+    context["documents_analyzed"] = list(context["documents_analyzed"])
+    
+    return context
+
+
+def _format_evidence_context_for_prompt(context: dict) -> str:
+    """
+    Format the evidence context into a structured string for the LLM prompt.
+    """
+    import json
+    
+    output = []
+    person_name = context.get("target_person", "Unknown")
+    
+    output.append(f"# Evidence Context for {person_name}\n")
+    output.append(f"**Documents analyzed:** {', '.join(context.get('documents_analyzed', [])) or 'None'}\n")
+    
+    # Subject's own claims
+    claims = context.get("subject_claims", [])
+    if claims:
+        output.append(f"\n## {person_name}'s Own Statements ({len(claims)} claims)\n")
+        for i, claim in enumerate(claims, 1):
+            output.append(f"\n### Claim {i}")
+            output.append(f"**Statement:** {claim.get('claim', 'N/A')}")
+            quote = claim.get("quote", "")
+            if quote:
+                quote_text = quote if isinstance(quote, str) else (quote[0] if quote else "")
+                if quote_text:
+                    output.append(f"> \"{quote_text[:500]}{'...' if len(str(quote_text)) > 500 else ''}\"")
+            output.append(f"*Source: {claim.get('source', 'Unknown')}*")
+    
+    # Subject's timeline
+    timeline = context.get("subject_timeline", [])
+    if timeline:
+        output.append(f"\n## {person_name}'s Timeline ({len(timeline)} events)\n")
+        for event in timeline:
+            date = event.get("date", "Unknown date")
+            desc = event.get("description", "No description")
+            source = event.get("source", "Unknown")
+            output.append(f"- **{date}:** {desc} *(Source: {source})*")
+    
+    # Third party mentions
+    third_party = context.get("third_party_mentions", [])
+    if third_party:
+        output.append(f"\n## What Others Say About {person_name} ({len(third_party)} mentions)\n")
+        for claim in third_party:
+            subject = claim.get("subject", "Unknown")
+            claim_text = claim.get("claim", "N/A")
+            source = claim.get("source", "Unknown")
+            quote = claim.get("quote", "")
+            output.append(f"**{subject}** stated: {claim_text}")
+            if quote:
+                quote_text = quote if isinstance(quote, str) else (quote[0] if quote else "")
+                if quote_text:
+                    output.append(f"> \"{quote_text[:300]}{'...' if len(str(quote_text)) > 300 else ''}\"")
+            output.append(f"*Source: {source}*\n")
+    
+    # Overlapping timelines (other witnesses at same times)
+    overlapping = context.get("overlapping_timelines", [])
+    if overlapping:
+        output.append(f"\n## Other Events at Same Times ({len(overlapping)} events)\n")
+        for event in overlapping:
+            date = event.get("date", "Unknown")
+            desc = event.get("description", "No description")
+            people = event.get("people_involved", [])
+            source = event.get("source", "Unknown")
+            output.append(f"- **{date}:** {desc}")
+            if people:
+                output.append(f"  People involved: {', '.join(people)}")
+            output.append(f"  *Source: {source}*")
+    
+    # Physical evidence
+    evidence = context.get("physical_evidence", [])
+    if evidence:
+        output.append(f"\n## Physical/Forensic Evidence ({len(evidence)} items)\n")
+        for item in evidence:
+            name = item.get("name", "Unknown")
+            desc = item.get("description", "No description")
+            source = item.get("source", "Unknown")
+            if isinstance(source, list):
+                source = ", ".join(source)
+            output.append(f"- **{name}:** {desc} *(Source: {source})*")
+    
+    # Conflicts
+    conflicts = context.get("conflicts", [])
+    if conflicts:
+        output.append(f"\n## Identified Conflicts/Inconsistencies ({len(conflicts)} conflicts)\n")
+        for conflict in conflicts:
+            conflict_type = conflict.get("type", "unknown")
+            description = conflict.get("description", "No description")
+            output.append(f"### {conflict_type.replace('_', ' ').title()}")
+            output.append(f"{description}")
+            
+            conflict_claims = conflict.get("claims", [])
+            for claim in conflict_claims[:3]:  # Limit to 3 per conflict
+                subject = claim.get("subject", "Unknown")
+                claim_text = claim.get("claim", "N/A")
+                source = claim.get("source", "Unknown")
+                output.append(f"- **{subject}:** {claim_text} *(Source: {source})*")
+    
+    # Relationships
+    relationships = context.get("relationships", [])
+    if relationships:
+        output.append(f"\n## {person_name}'s Relationships ({len(relationships)} documented)\n")
+        for rel in relationships:
+            p1 = rel.get("person1", "Unknown")
+            p2 = rel.get("person2", "Unknown")
+            rel_type = rel.get("type", "unknown").replace("_", " ")
+            desc = rel.get("description", "")
+            source = rel.get("source", "Unknown")
+            output.append(f"- **{p1}** ↔ **{p2}** ({rel_type}): {desc} *(Source: {source})*")
+    
+    # Key case facts
+    facts = context.get("case_facts", [])
+    if facts:
+        output.append(f"\n## Key Case Facts ({len(facts)} facts)\n")
+        for fact in facts[:15]:  # Limit to 15
+            if isinstance(fact, dict):
+                output.append(f"- {fact.get('fact', str(fact))} *(Source: {fact.get('source', 'Unknown')})*")
+            else:
+                output.append(f"- {fact}")
+    
+    return "\n".join(output)
+
+
+def _answer_follow_up_query(
+    question: str, 
+    data: dict,
+    client: OpenAI = None,
+    model: str = None
+) -> Tuple[str, bool]:
+    """
+    Generate evidence-driven follow-up questions for a specific person.
+    
+    Args:
+        question: The user's question
+        data: Extracted data dictionary
+        client: OpenAI client (required for LLM generation)
+        model: Model to use
+        
+    Returns:
+        Tuple of (response_text, success)
+    """
+    from pathlib import Path
+    
+    entities = data.get("entities", [])
+    
+    # Extract target person from the question
+    target_entity = extract_target_person_for_follow_up(question, entities)
+    
+    if not target_entity:
+        # Try to find any person mentioned
+        potential_names = _extract_potential_names(question)
+        if potential_names:
+            return (
+                f"## Could Not Find Person in Provided Documents\n\n"
+                f"I couldn't find information about **{', '.join(potential_names)}** in the documents you provided.\n\n"
+                f"**People in the documents you provided:**\n" +
+                "\n".join(f"- {e.get('name')}" for e in entities if e.get('type', '').lower() == 'person')[:10] +
+                "\n\n*Try asking about one of these people instead.*",
+                False
+            )
+        return (
+            "## No Person Specified\n\n"
+            "Please specify who you want follow-up questions for.\n\n"
+            "**Example:** \"Generate follow-up questions for Dennis Rosa Roman\"\n\n"
+            "**People in the documents:**\n" +
+            "\n".join(f"- {e.get('name')}" for e in entities if e.get('type', '').lower() == 'person')[:10],
+            False
+        )
+    
+    person_name = target_entity.get("name", "Unknown")
+    
+    # Build comprehensive evidence context
+    evidence_context = _build_evidence_context(person_name, data)
+    
+    # Check if we have enough data
+    total_evidence = (
+        len(evidence_context.get("subject_claims", [])) +
+        len(evidence_context.get("subject_timeline", [])) +
+        len(evidence_context.get("third_party_mentions", []))
+    )
+    
+    if total_evidence == 0:
+        return (
+            f"## Insufficient Evidence for {person_name}\n\n"
+            f"I don't have enough documented statements or evidence about **{person_name}** "
+            f"to generate meaningful follow-up questions.\n\n"
+            f"**What I found:**\n"
+            f"- Claims by {person_name}: {len(evidence_context.get('subject_claims', []))}\n"
+            f"- Events involving {person_name}: {len(evidence_context.get('subject_timeline', []))}\n"
+            f"- Mentions by others: {len(evidence_context.get('third_party_mentions', []))}\n\n"
+            f"*Try uploading more documents containing statements from or about {person_name}.*",
+            False
+        )
+    
+    # If no client provided, return raw context (for testing)
+    if not client or not model:
+        formatted_context = _format_evidence_context_for_prompt(evidence_context)
+        return (
+            f"## Evidence Context for {person_name}\n\n"
+            f"*(LLM synthesis not available - showing raw evidence)*\n\n"
+            f"{formatted_context}",
+            True
+        )
+    
+    # Load the follow-up generator prompt
+    prompt_path = Path("prompts/follow_up_generator.md")
+    if not prompt_path.exists():
+        return ("Follow-up generator prompt not found.", False)
+    
+    follow_up_prompt = prompt_path.read_text()
+    
+    # Replace placeholder with target person
+    follow_up_prompt = follow_up_prompt.replace("{target_person}", person_name)
+    
+    # Format evidence context
+    formatted_context = _format_evidence_context_for_prompt(evidence_context)
+    
+    # Build the full prompt
+    user_prompt = f"""Generate follow-up interview questions for **{person_name}** based on the following evidence.
+
+{formatted_context}
+
+---
+
+Based on this evidence, generate specific, evidence-grounded follow-up questions that:
+1. Probe inconsistencies in their statements
+2. Seek corroboration for unverified claims
+3. Fill timeline gaps
+4. Compare their account to other witnesses
+5. Connect their statements to physical evidence
+
+Format the output as specified in your instructions."""
+
+    try:
+        resp = client.responses.create(
+            model=model,
+            input=[
+                {"role": "system", "content": follow_up_prompt},
+                {"role": "user", "content": user_prompt}
+            ]
+        )
+        return (resp.output_text.strip(), True)
+    except Exception as e:
+        print(f"Follow-up question generation error: {e}")
+        return (f"Error generating follow-up questions: {e}", False)
 
 
 def _answer_general_exhaustive(question: str, data: dict) -> Tuple[str, bool]:

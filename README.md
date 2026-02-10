@@ -15,6 +15,15 @@ An investigative AI system that ingests evidence into a Vector Store and knowled
 - **Document Management**: Drag-and-drop upload with processing status
 - **Conversation History**: Multi-turn investigations with full context
 - **Export Capabilities**: Download reports and conversation transcripts
+- **Relationship Graph**: Interactive D3.js visualization of entity relationships
+
+### **Relationship Graph Visualization**
+- **Interactive D3.js Graph**: Force-directed network visualization of people and their relationships
+- **Toggle Views**: Switch between text and graph views for relationship queries
+- **Node Details**: Click any node to see entity details and all their connections
+- **Drag & Zoom**: Rearrange nodes and navigate large graphs
+- **Filter by Type**: Toggle visibility of relationship types (Family, Romantic, Case-related, etc.)
+- **Color-coded Links**: Distinct colors for different relationship types
 
 ###  **Document Processing**
 - **Smart Ingestion**: Automatic PDF chunking and embedding via OpenAI
@@ -85,7 +94,14 @@ Navigate to `http://localhost:8000`
    - Watch real-time progress as agents analyze the embedding space
    - Review and reason with findings
 
-3. **Export Results**
+3. **Visualize Relationships**
+   - Ask about relationships (e.g., "How are all the entities related?")
+   - Toggle between text and graph views using the view buttons
+   - Click nodes to see entity details and connections
+   - Use filters to show/hide relationship types
+   - Drag nodes to rearrange the graph
+
+4. **Export Results**
    - Download conversation transcripts
    - Save investigation reports as Markdown
 
@@ -150,6 +166,8 @@ investigative-ai-proto/
 │   ├── state.py           # State management
 │   ├── ingest.py          # Document ingestion
 │   ├── ask.py             # Query interface
+│   ├── router.py          # Query classification and routing
+│   ├── extract.py         # Entity/relationship extraction
 │   └── coa.py             # Chain-of-agents engine
 ├── scripts/                # Command-line workflow
 │   ├── 00_create_store.py # Initialize vector store
@@ -161,7 +179,10 @@ investigative-ai-proto/
 │   ├── app.py             # FastAPI web server
 │   ├── websocket.py       # Real-time communication
 │   ├── templates/         # HTML templates
-│   └── static/            # CSS, JavaScript, assets
+│   └── static/            
+│       ├── app.js         # Main chat application
+│       ├── graph.js       # D3.js relationship graph visualization
+│       └── style.css      # Styling
 ├── requirements.txt        # Python dependencies
 ├── env-template.txt       # Environment setup guide
 └── README.md              # This file
@@ -226,6 +247,11 @@ Customize investigation behavior by editing:
 
 **Gap Analysis:**
 > "What important information is missing? What questions remain unanswered?"
+
+**Relationship Visualization (triggers graph view):**
+> "How are all the entities related?"
+> "What are the relationships between people?"
+> "Show me how everyone is connected."
 
 ### Sample Output
 

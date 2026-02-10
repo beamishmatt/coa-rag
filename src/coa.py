@@ -163,15 +163,16 @@ def format_conversation_history(history: list) -> str:
     if not history:
         return ""
     
-    formatted = "CONVERSATION HISTORY:\n"
+    formatted = "CONVERSATION HISTORY (use this to avoid repeating information):\n"
     for msg in history:
         # Support both 'role' (from frontend) and 'sender' formats
         role_value = msg.get("role") or msg.get("sender", "")
         role = "User" if role_value in ["user", "User"] else "Assistant"
         content = msg.get("content", "")
-        # Truncate long messages to avoid token limits
-        if len(content) > 500:
-            content = content[:500] + "..."
+        # Use larger truncation to preserve more context - 1500 chars for assistant, 300 for user
+        max_len = 1500 if role == "Assistant" else 300
+        if len(content) > max_len:
+            content = content[:max_len] + "... [truncated]"
         formatted += f"{role}: {content}\n\n"
     
     return formatted + "---\n\n"

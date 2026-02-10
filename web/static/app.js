@@ -122,7 +122,7 @@ class InvestigativeAI {
                 break;
             
             case 'stream_end':
-                this.finishStreamingResponse();
+                this.finishStreamingResponse(data.graph_data);
                 break;
             
             case 'response':
@@ -351,7 +351,7 @@ class InvestigativeAI {
         }
     }
 
-    finishStreamingResponse() {
+    finishStreamingResponse(graphData = null) {
         const contentDiv = document.getElementById('streamingContent');
         const messageDiv = document.getElementById('streamingMessage');
         
@@ -360,6 +360,11 @@ class InvestigativeAI {
             contentDiv.innerHTML = this.formatMessage(this.streamingContent);
             // Remove the ID so it doesn't interfere with future streaming responses
             contentDiv.removeAttribute('id');
+        }
+        
+        // If graph data is present, add toggle and graph container
+        if (graphData && graphData.nodes && graphData.nodes.length > 0 && messageDiv) {
+            this.addGraphVisualization(messageDiv, graphData);
         }
         
         if (messageDiv) {
@@ -372,13 +377,116 @@ class InvestigativeAI {
             this.currentConversation.push({
                 sender: 'ai',
                 content: this.streamingContent,
-                timestamp: new Date()
+                timestamp: new Date(),
+                graphData: graphData // Store graph data with conversation
             });
         }
 
         this.currentStreamingMessage = null;
         this.streamingContent = '';
         this.finishProcessing();
+    }
+
+    /**
+     * Add graph visualization toggle and container to a message
+     */
+    addGraphVisualization(messageDiv, graphData) {
+        const contentDiv = messageDiv.querySelector('.message-content');
+        if (!contentDiv) return;
+
+        // Generate unique ID for this graph
+        const graphId = 'graph-' + Date.now();
+
+        // Create toggle container
+        const toggleContainer = document.createElement('div');
+        toggleContainer.className = 'view-toggle-container';
+        toggleContainer.innerHTML = `
+            <div class="view-toggle">
+                <button class="view-toggle-btn active" data-view="text" onclick="app.toggleGraphView('${graphId}', 'text')">
+                    <i class="fas fa-align-left"></i> Text
+                </button>
+                <button class="view-toggle-btn" data-view="graph" onclick="app.toggleGraphView('${graphId}', 'graph')">
+                    <i class="fas fa-project-diagram"></i> Graph
+                </button>
+            </div>
+        `;
+
+        // Wrap existing content in text-view container
+        const textContent = contentDiv.innerHTML;
+        contentDiv.innerHTML = '';
+        
+        const textView = document.createElement('div');
+        textView.className = 'text-view active';
+        textView.id = `${graphId}-text`;
+        textView.innerHTML = textContent;
+
+        // Create graph container
+        const graphView = document.createElement('div');
+        graphView.className = 'graph-view';
+        graphView.id = `${graphId}-graph`;
+        graphView.innerHTML = `
+            <div class="graph-container" id="${graphId}-container">
+                <div class="graph-loading">
+                    <i class="fas fa-spinner fa-spin"></i> Loading graph...
+                </div>
+            </div>
+            <div class="graph-detail-panel" id="${graphId}-detail"></div>
+        `;
+
+        // Insert toggle before content
+        contentDiv.appendChild(toggleContainer);
+        contentDiv.appendChild(textView);
+        contentDiv.appendChild(graphView);
+
+        // Store graph data for later rendering
+        if (!window.graphDataStore) {
+            window.graphDataStore = {};
+        }
+        window.graphDataStore[graphId] = graphData;
+
+        console.log(`Graph data stored for ${graphId}:`, graphData);
+    }
+
+    /**
+     * Toggle between text and graph views
+     */
+    toggleGraphView(graphId, view) {
+        const textView = document.getElementById(`${graphId}-text`);
+        const graphView = document.getElementById(`${graphId}-graph`);
+        const toggleBtns = document.querySelectorAll(`[onclick*="${graphId}"]`);
+
+        if (!textView || !graphView) return;
+
+        // Update button states
+        toggleBtns.forEach(btn => {
+            if (btn.dataset.view === view) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        if (view === 'text') {
+            textView.classList.add('active');
+            graphView.classList.remove('active');
+        } else {
+            textView.classList.remove('active');
+            graphView.classList.add('active');
+
+            // Render graph if not already rendered
+            const container = document.getElementById(`${graphId}-container`);
+            if (container && !container.dataset.rendered) {
+                const graphData = window.graphDataStore[graphId];
+                if (graphData && window.RelationshipGraph) {
+                    container.innerHTML = ''; // Clear loading message
+                    const graph = new window.RelationshipGraph(container, graphData, `${graphId}-detail`);
+                    graph.render();
+                    container.dataset.rendered = 'true';
+                }
+            }
+        }
+
+        this.scrollToBottom();
     }
 
     removeLoadingIndicator() {
@@ -397,11 +505,110 @@ class InvestigativeAI {
         this.elements.messageInput.focus();
     }
 
+    /**
+     * Extract follow-up suggestions from the response content.
+     * Looks for the "Suggested Follow-ups:" section and extracts the suggestions.
+     * Handles multiple formats:
+     *   - With or without --- separator
+     *   - With or without ** bold markers
+     *   - With or without - bullet markers
+     */
+    extractFollowUpSuggestions(content) {
+        if (!content) return { mainContent: content, suggestions: [] };
+        
+        // Try multiple patterns to match different formats
+        const patterns = [
+            // Format 1: ---\n**Suggested Follow-ups:**\n- suggestion (ideal format)
+            /\n---\s*\n\*\*Suggested Follow-ups:\*\*\s*\n((?:[-*] .+\n?)+)/i,
+            // Format 2: **Suggested Follow-ups:**\n- suggestion (no separator)
+            /\n\*\*Suggested Follow-ups:\*\*\s*\n((?:[-*] .+\n?)+)/i,
+            // Format 3: Suggested Follow-ups:\n- suggestion (no bold)
+            /\nSuggested Follow-ups:\s*\n((?:[-*] .+\n?)+)/i,
+            // Format 4: ---\n**Suggested Follow-ups:**\nsuggestion (no bullets)
+            /\n---\s*\n\*\*Suggested Follow-ups:\*\*\s*\n((?:[^\n-*][^\n]+\n?)+)/i,
+            // Format 5: Suggested Follow-ups:\nsuggestion (plain text, no bullets)
+            /\nSuggested Follow-ups:\s*\n((?:(?!^#|^---|^\*\*)[^\n]+\n?)+)/im,
+        ];
+        
+        let match = null;
+        let matchedPattern = null;
+        
+        for (const pattern of patterns) {
+            match = content.match(pattern);
+            if (match) {
+                matchedPattern = pattern;
+                break;
+            }
+        }
+        
+        if (!match) {
+            return { mainContent: content, suggestions: [] };
+        }
+        
+        // Extract the suggestions list
+        const suggestionsBlock = match[1];
+        const suggestions = suggestionsBlock
+            .split('\n')
+            .map(line => line.replace(/^[-*]\s*/, '').trim())  // Remove bullet markers
+            .filter(line => line.length > 0 && !line.match(/^#|^---|^\*\*/));  // Filter empty/header lines
+        
+        // Remove the suggestions section from main content
+        const mainContent = content.replace(matchedPattern, '');
+        
+        return { mainContent, suggestions };
+    }
+
+    /**
+     * Render follow-up suggestions as clickable chips.
+     */
+    renderSuggestionChips(suggestions) {
+        if (!suggestions || suggestions.length === 0) return '';
+        
+        const chips = suggestions.map(suggestion => {
+            // Escape the suggestion for use in onclick attribute
+            const escapedSuggestion = suggestion
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+            return `<button class="suggestion-chip" onclick="app.useSuggestion('${escapedSuggestion}')" title="Click to ask this question">${suggestion}</button>`;
+        }).join('');
+        
+        return `
+            <div class="suggestions-container">
+                <div class="suggestions-label">Suggested Follow-ups:</div>
+                <div class="suggestions-chips">${chips}</div>
+            </div>
+        `;
+    }
+
+    /**
+     * Handle clicking on a suggestion chip - populate the input and focus it.
+     */
+    useSuggestion(suggestion) {
+        // Decode HTML entities back to normal characters
+        const decoded = suggestion
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>');
+        
+        this.elements.messageInput.value = decoded;
+        this.autoResize();
+        this.updateSendButtonState();
+        this.elements.messageInput.focus();
+        
+        // Scroll to the input area
+        this.elements.messageInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     formatMessage(content) {
         if (!content) return '';
         
+        // Extract follow-up suggestions before processing
+        const { mainContent, suggestions } = this.extractFollowUpSuggestions(content);
+        
         // Escape HTML first
-        let html = content
+        let html = mainContent
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
@@ -521,6 +728,11 @@ class InvestigativeAI {
             .replace(/<hr><br>/g, '<hr>')
             .replace(/<br><h/g, '<h')
             .replace(/<br><hr/g, '<hr');
+        
+        // Append suggestion chips if there are any
+        if (suggestions && suggestions.length > 0) {
+            html += this.renderSuggestionChips(suggestions);
+        }
         
         return html;
     }

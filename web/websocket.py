@@ -56,13 +56,16 @@ class InvestigationWebSocketManager:
             "content": chunk
         }, websocket)
 
-    async def send_stream_end(self, websocket: WebSocket, question: str):
-        """Signal that streaming response is complete"""
-        await self.send_message({
+    async def send_stream_end(self, websocket: WebSocket, question: str, graph_data: dict = None):
+        """Signal that streaming response is complete, optionally including graph data"""
+        message = {
             "type": "stream_end",
             "question": question,
             "timestamp": asyncio.get_event_loop().time()
-        }, websocket)
+        }
+        if graph_data:
+            message["graph_data"] = graph_data
+        await self.send_message(message, websocket)
 
     async def send_error(self, websocket: WebSocket, error_message: str):
         """Send error message to client"""

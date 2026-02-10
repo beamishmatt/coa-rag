@@ -27,7 +27,12 @@ from src.extract import (
     remove_document_extraction, deduplicate_extracted_data,
     analyze_investigative_notes
 )
-from src.router import classify_query, answer_exhaustive_query, should_use_extracted_data, is_guilt_query, get_guilt_deflection_response
+from src.router import (
+    classify_query, answer_exhaustive_query, should_use_extracted_data, 
+    is_guilt_query, get_guilt_deflection_response,
+    is_speculative_query, get_speculative_deflection_response,
+    get_query_category
+)
 from web.websocket import InvestigationWebSocketManager
 
 
@@ -53,6 +58,122 @@ def ocr_pdf(pdf_path: Path) -> str:
     except Exception as e:
         print(f"OCR error: {e}")
         return ""
+
+
+def build_graph_data(extracted_data: dict, filter_names: List[str] = None) -> Dict[str, Any]:
+    """
+    Build graph data structure from extracted relationships for D3.js visualization.
+    
+    Args:
+        extracted_data: The extracted data containing relationships and entities
+        filter_names: Optional list of names to filter relationships (show only relationships involving these people)
+    
+    Returns:
+        Dict with 'nodes' and 'links' arrays for D3.js force-directed graph
+    """
+    relationships = extracted_data.get("relationships", [])
+    entities = extracted_data.get("entities", [])
+    
+    if not relationships:
+        return {"nodes": [], "links": []}
+    
+    # Build entity lookup for descriptions
+    entity_lookup = {}
+    for entity in entities:
+        if entity.get("type", "").lower() == "person":
+            name_key = entity.get("name", "").lower().strip()
+            entity_lookup[name_key] = entity
+    
+    # Collect unique nodes and build links
+    nodes_dict = {}  # name_key -> node data
+    links = []
+    
+    def normalize_name(name: str) -> str:
+        return name.lower().strip()
+    
+    def get_entity_info(name: str) -> dict:
+        """Look up entity info by name (fuzzy match)"""
+        name_norm = normalize_name(name)
+        
+        # Exact match
+        if name_norm in entity_lookup:
+            return entity_lookup[name_norm]
+        
+        # Partial match (name parts)
+        name_parts = set(name_norm.split())
+        for key, entity in entity_lookup.items():
+            key_parts = set(key.split())
+            if name_parts & key_parts:  # Any common parts
+                return entity
+        
+        return None
+    
+    # Filter relationships if names provided
+    filtered_rels = relationships
+    if filter_names:
+        filter_names_norm = [normalize_name(n) for n in filter_names]
+        filtered_rels = []
+        for rel in relationships:
+            p1_norm = normalize_name(rel.get("person1", ""))
+            p2_norm = normalize_name(rel.get("person2", ""))
+            p1_words = set(p1_norm.split())
+            p2_words = set(p2_norm.split())
+            
+            # Check if either person matches any filter name
+            for filter_name in filter_names_norm:
+                filter_words = set(filter_name.split())
+                if (filter_name in p1_norm or filter_name in p2_norm or
+                    filter_words & p1_words or filter_words & p2_words):
+                    filtered_rels.append(rel)
+                    break
+    
+    for rel in filtered_rels:
+        person1 = rel.get("person1", "Unknown")
+        person2 = rel.get("person2", "Unknown")
+        rel_type = rel.get("type", "unknown")
+        description = rel.get("description", "")
+        quote = rel.get("quote", "")
+        source = rel.get("source", "")
+        
+        # Normalize keys
+        p1_key = normalize_name(person1)
+        p2_key = normalize_name(person2)
+        
+        # Add nodes if not already present
+        if p1_key not in nodes_dict:
+            entity_info = get_entity_info(person1)
+            nodes_dict[p1_key] = {
+                "id": p1_key,
+                "name": person1,
+                "type": "Person",
+                "description": entity_info.get("description", "") if entity_info else "",
+                "sources": list(set([source] if isinstance(source, str) else source)) if source else []
+            }
+        
+        if p2_key not in nodes_dict:
+            entity_info = get_entity_info(person2)
+            nodes_dict[p2_key] = {
+                "id": p2_key,
+                "name": person2,
+                "type": "Person",
+                "description": entity_info.get("description", "") if entity_info else "",
+                "sources": list(set([source] if isinstance(source, str) else source)) if source else []
+            }
+        
+        # Add link
+        links.append({
+            "source": p1_key,
+            "target": p2_key,
+            "type": rel_type,
+            "description": description,
+            "quote": quote[:200] + "..." if len(quote) > 200 else quote,
+            "source_doc": source if isinstance(source, str) else ", ".join(source) if source else ""
+        })
+    
+    return {
+        "nodes": list(nodes_dict.values()),
+        "links": links
+    }
 
 
 app = FastAPI(title="Investigative AI", description="ChatGPT-style investigative AI interface")
@@ -273,19 +394,63 @@ async def list_documents():
 
 @app.delete("/api/documents/{file_id}")
 async def delete_document(file_id: str):
-    """Delete a document from the vector store"""
+    """Delete a document from the vector store, OpenAI files, local storage, and extracted data"""
     state = load_state()
+    vector_store_id = state.get("vector_store_id")
     
     try:
-        client.files.delete(file_id)
+        # Get the filename before deleting (needed for local file and extraction removal)
+        filename = None
+        try:
+            file_info = client.files.retrieve(file_id)
+            filename = file_info.filename
+        except Exception as e:
+            print(f"Could not retrieve file info for {file_id}: {e}")
+        
+        # 1. Remove from vector store first (if vector store exists)
+        if vector_store_id:
+            try:
+                client.vector_stores.files.delete(
+                    vector_store_id=vector_store_id,
+                    file_id=file_id
+                )
+            except Exception as e:
+                print(f"Could not remove from vector store: {e}")
+        
+        # 2. Delete from OpenAI files
+        try:
+            client.files.delete(file_id)
+        except Exception as e:
+            print(f"Could not delete OpenAI file: {e}")
+        
+        # 3. Delete local file from data/docs/
+        if filename:
+            local_path = Path(f"data/docs/{filename}")
+            if local_path.exists():
+                try:
+                    local_path.unlink()
+                    print(f"Deleted local file: {local_path}")
+                except Exception as e:
+                    print(f"Could not delete local file: {e}")
+            
+            # 4. Remove extracted data for this document
+            try:
+                remove_document_extraction(filename)
+                print(f"Removed extracted data for: {filename}")
+            except Exception as e:
+                print(f"Could not remove extracted data: {e}")
+        
+        # 5. Update state
         file_ids = state.get("file_ids", [])
         if file_id in file_ids:
             file_ids.remove(file_id)
             state["file_ids"] = file_ids
             save_state(state)
         
-        return {"deleted": file_id}
+        return {"deleted": file_id, "filename": filename}
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.websocket("/ws")
@@ -338,6 +503,20 @@ async def handle_streaming_question(websocket: WebSocket, question: str, history
             await manager.send_stream_end(websocket, question)
             return
         
+        # Check for speculative queries (motive, who benefits, why killed)
+        if is_speculative_query(question):
+            response = get_speculative_deflection_response()
+            await manager.send_stream_start(websocket)
+            
+            # Send deflection response in chunks for consistent UX
+            chunk_size = 50
+            for i in range(0, len(response), chunk_size):
+                await manager.send_chunk(websocket, response[i:i + chunk_size])
+                await asyncio.sleep(0.01)
+            
+            await manager.send_stream_end(websocket, question)
+            return
+        
         loop = asyncio.get_running_loop()
         
         # Load extracted data for entity-aware routing
@@ -345,6 +524,10 @@ async def handle_streaming_question(websocket: WebSocket, question: str, history
         
         # Route query to appropriate handler (now entity-aware)
         query_type = classify_query(question, extracted_data)
+        print(f"\n{'='*60}")
+        print(f"ROUTING DEBUG: Question: {question[:80]}...")
+        print(f"ROUTING DEBUG: Query type: {query_type}")
+        print(f"{'='*60}\n")
         
         if query_type == "EXHAUSTIVE":
             # Use preprocessed extracted data for exhaustive queries
@@ -356,6 +539,15 @@ async def handle_streaming_question(websocket: WebSocket, question: str, history
                 lambda: answer_exhaustive_query(question, extracted_data, client, DEFAULT_MODEL)
             )
             
+            # Check if this is a relationship query - if so, include graph data
+            query_category = get_query_category(question, extracted_data)
+            graph_data = None
+            
+            if query_category == "relationships":
+                # Build graph data for visualization
+                graph_data = build_graph_data(extracted_data)
+                print(f"GRAPH DEBUG: Built graph with {len(graph_data.get('nodes', []))} nodes and {len(graph_data.get('links', []))} links")
+            
             # Now that response is ready, signal stream start
             await manager.send_stream_start(websocket)
             
@@ -365,8 +557,8 @@ async def handle_streaming_question(websocket: WebSocket, question: str, history
                 await manager.send_chunk(websocket, response[i:i + chunk_size])
                 await asyncio.sleep(0.01)
             
-            # Signal stream end
-            await manager.send_stream_end(websocket, question)
+            # Signal stream end with optional graph data
+            await manager.send_stream_end(websocket, question, graph_data)
             return
         
         # SPECIFIC queries use CoA + file_search
@@ -468,6 +660,14 @@ async def ask_question(request: Dict[str, Any]):
         if is_guilt_query(question):
             return {
                 "response": get_guilt_deflection_response(), 
+                "question": question, 
+                "query_type": "deflected"
+            }
+        
+        # Check for speculative queries (motive, who benefits, why killed)
+        if is_speculative_query(question):
+            return {
+                "response": get_speculative_deflection_response(), 
                 "question": question, 
                 "query_type": "deflected"
             }

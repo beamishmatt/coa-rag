@@ -108,6 +108,13 @@ Rules:
 - For relationships, extract ANY connection between people mentioned - even indirect ones
 - Be thorough - this extraction will be used to answer comprehensive queries later
 
+CRITICAL - CLAIMS FROM INTERVIEWS ARE UNVERIFIED:
+- Just because someone SAID something in an interview does NOT mean it happened
+- When extracting claims from interviews, these are what the person CLAIMED, not verified facts
+- People lie, misremember, have biases, and protect themselves or others
+- The "claim" field should capture what was stated, with the understanding it may not be true
+- Extract the claim faithfully, but understand it will be presented with appropriate hedging later
+
 BENEFIT INDICATORS - Extract any evidence of who might benefit from the incident:
 - FINANCIAL benefits: Insurance beneficiaries, inheritance, debts owed TO the victim (cleared by death), shared assets, business ownership changes
 - PRACTICAL benefits: Obstacles removed (someone blocking their goals), control/power gained, secrets protected (victim knew something damaging)
